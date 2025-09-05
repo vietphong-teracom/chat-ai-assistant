@@ -23,10 +23,17 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
         {children}
       </Text>
     ),
-    code({ inline, className, children, ...props }) {
+    code({ node, inline, className, children, ...props }: any) {
       if (inline) {
         return (
-          <Box as="code" bg="gray.100" px={1} borderRadius="sm" fontFamily="mono" {...props}>
+          <Box
+            as="code"
+            bg="gray.100"
+            px={1}
+            borderRadius="sm"
+            fontFamily="mono"
+            {...props}
+          >
             {children}
           </Box>
         );
@@ -34,7 +41,15 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
 
       // code block (dùng ```lang)
       return (
-        <Box as="pre" bg="gray.900" color="gray.100" p={4} borderRadius="md" overflowX="auto" mb={3}>
+        <Box
+          as="pre"
+          bg="gray.900"
+          color="gray.100"
+          p={4}
+          borderRadius="md"
+          overflowX="auto"
+          mb={3}
+        >
           <code className={className} {...props}>
             {children}
           </code>
@@ -44,7 +59,11 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
   };
 
   return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypePrism]} components={components}>
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypePrism]}
+      components={components}
+    >
       {content}
     </ReactMarkdown>
   );

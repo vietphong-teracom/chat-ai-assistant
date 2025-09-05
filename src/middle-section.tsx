@@ -52,6 +52,8 @@ export function MiddleSection() {
         type: f.type,
         fileId: f.fileId!,
         previewUrl: f.previewUrl,
+        size: f.size,
+        uploading: f.uploading ?? false,
       })),
     };
 
