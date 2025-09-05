@@ -1,11 +1,32 @@
-import { Box, Center, Heading, HStack, IconButton, Input, Span, Text, VStack } from "@chakra-ui/react";
-import { FileUploadList, FileUploadRoot, FileUploadTrigger } from "./components/ui/file-button";
-import { InputGroup } from "./components/ui/input-group";
-import { BirthdayIcon, ChartIcon, CodeIcon, EnterIcon, IllustrationIcon, UploadIcon } from "./icons/other-icons";
+import {
+  Box,
+  Center,
+  Flex,
+  Heading,
+  HStack,
+  IconButton,
+  Textarea,
+  VStack,
+} from "@chakra-ui/react";
+import {
+  FileUploadList,
+  FileUploadRoot,
+  FileUploadTrigger,
+} from "./components/ui/file-button";
+import {
+  BirthdayIcon,
+  ChartIcon,
+  CodeIcon,
+  EnterIcon,
+  IllustrationIcon,
+  UploadIcon,
+} from "./icons/other-icons";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./components/ui/button";
 import { askStream, ChatMsg, Role } from "./lib/openai";
 import { MarkdownMessage } from "./MarkdownMessage";
+import type { KeyboardEvent, SetStateAction } from "react";
+import TextareaAutosize from "react-textarea-autosize";
 
 interface PromptButtonProps {
   icon?: React.ReactElement;
@@ -17,7 +38,7 @@ function PromptButton(props: PromptButtonProps) {
   return (
     <Button variant="outline" borderRadius="full">
       {icon}
-      <Span color="fg.subtle">{description}</Span>
+      <Box ml={2}>{description}</Box>
     </Button>
   );
 }
@@ -25,7 +46,10 @@ function PromptButton(props: PromptButtonProps) {
 export function MiddleSection() {
   const [inputValue, setInputValue] = useState("");
   const [msgs, setMsgs] = useState<ChatMsg[]>([
-    { role: "system", content: "Bạn là trợ lý hữu ích, trả lời ngắn gọn, rõ ràng." },
+    {
+      role: "system",
+      content: "Bạn là trợ lý hữu ích, trả lời ngắn gọn, rõ ràng.",
+    },
   ]);
   const [streaming, setStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -33,6 +57,7 @@ export function MiddleSection() {
 
   const sendStream = async () => {
     if (!inputValue.trim() || streaming) return;
+
     const next = [...msgs, { role: "user" as Role, content: inputValue }];
     setMsgs(next);
     setInputValue("");
@@ -46,7 +71,6 @@ export function MiddleSection() {
       acc += delta;
       setMsgs((prev) => {
         const copy = [...prev];
-        // Cập nhật message cuối (assistant) với phần text vừa stream về
         copy[copy.length - 1] = { role: "assistant", content: acc };
         return copy;
       });
@@ -60,12 +84,14 @@ export function MiddleSection() {
     }
   };
 
-  // const stop = () => {
-  //   abortRef.current?.abort();
-  //   setStreaming(false);
-  // };
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault(); // Ngăn xuống dòng
+      sendStream();
+    }
+    // Shift + Enter → xuống dòng tự động
+  };
 
-  // Auto scroll to bottom khi có tin nhắn mới
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs]);
@@ -81,7 +107,7 @@ export function MiddleSection() {
 
         {/* Conversation */}
         <Center w="100%">
-          <VStack gap={4} align="stretch" w="768px">
+          <VStack gap={4} align="stretch" maxW="768px" w="100%">
             {msgs
               .filter((m) => m.role !== "system")
               .map((m, i) => (
@@ -105,46 +131,88 @@ export function MiddleSection() {
         </Center>
 
         {/* Input */}
-        <Center>
-          <InputGroup
-            minW="768px"
-            startElement={
+        <Center w="100%">
+          <Flex
+            maxW="768px"
+            w="100%"
+            borderRadius="3xl"
+            border="1px solid #ccc"
+            p={2}
+            align="center"
+            gap={2}
+          >
+            {/* Icon upload bên trái, width cố định */}
+            <Box w="40px" flexShrink={0}>
               <FileUploadRoot>
                 <FileUploadTrigger asChild>
-                  <UploadIcon fontSize="2xl" color="fg" />
+                  <IconButton
+                    aria-label="Upload file"
+                    size="sm"
+                    borderRadius="full"
+                    variant="ghost"
+                    w="100%"
+                    h="100%"
+                  >
+                    <UploadIcon fontSize="2xl" />
+                  </IconButton>
                 </FileUploadTrigger>
                 <FileUploadList />
               </FileUploadRoot>
-            }
-            endElement={
-              <IconButton
-                fontSize="2xl"
-                size="sm"
-                borderRadius="full"
-                disabled={inputValue.trim() === "" || streaming}
-                onClick={sendStream}
-              >
-                <EnterIcon fontSize="2xl" />
-              </IconButton>
-            }
-          >
-            <Input
+            </Box>
+
+            {/* Textarea */}
+            <TextareaAutosize
+              minRows={1}
+              maxRows={5}
               placeholder="Message ChatGPT"
-              variant="subtle"
-              size="lg"
-              borderRadius="3xl"
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(e: { target: { value: SetStateAction<string> } }) =>
+                setInputValue(e.target.value)
+              }
+              onKeyDown={handleKeyDown}
+              style={{
+                width: "100%",
+                borderRadius: "24px",
+                padding: "8px 12px",
+                resize: "none",
+                border: "none",
+                outline: "none",
+                background: "transparent",
+              }}
             />
-          </InputGroup>
+
+            {/* Icon gửi bên phải */}
+            <IconButton
+              aria-label="Send message"
+              size="sm"
+              borderRadius="full"
+              disabled={inputValue.trim() === "" || streaming}
+              onClick={sendStream}
+              variant="solid"
+            >
+              <EnterIcon fontSize="2xl" />
+            </IconButton>
+          </Flex>
         </Center>
 
         {/* Prompt buttons */}
         <HStack gap="2">
-          <PromptButton icon={<IllustrationIcon color="green.500" fontSize="lg" />} description="Create image" />
-          <PromptButton icon={<CodeIcon color="blue.500" fontSize="lg" />} description="Code" />
-          <PromptButton icon={<ChartIcon color="cyan.400" fontSize="lg" />} description="Analyze data" />
-          <PromptButton icon={<BirthdayIcon color="cyan.400" fontSize="lg" />} description="Surprise" />
+          <PromptButton
+            icon={<IllustrationIcon color="green.500" fontSize="lg" />}
+            description="Create image"
+          />
+          <PromptButton
+            icon={<CodeIcon color="blue.500" fontSize="lg" />}
+            description="Code"
+          />
+          <PromptButton
+            icon={<ChartIcon color="cyan.400" fontSize="lg" />}
+            description="Analyze data"
+          />
+          <PromptButton
+            icon={<BirthdayIcon color="cyan.400" fontSize="lg" />}
+            description="Surprise"
+          />
           <PromptButton description="More" />
         </HStack>
       </VStack>
