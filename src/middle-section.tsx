@@ -7,6 +7,7 @@ import {
   IconButton,
   VStack,
   Text,
+  Spinner,
 } from "@chakra-ui/react";
 import {
   BirthdayIcon,
@@ -18,13 +19,18 @@ import {
 } from "./icons/other-icons";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./components/ui/button";
-import { askStream, ChatMsg, Role } from "./lib/openai";
+import {
+  API_KEY,
+  API_URL,
+  askStreamUnified,
+  ChatMsg,
+  UploadedFile,
+} from "./lib/openai";
 import { MarkdownMessage } from "./MarkdownMessage";
 import type { KeyboardEvent, SetStateAction } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import { getFileMeta } from "./helper";
-
-// ✅ import getFileMeta
+import "../src/lib/index.css";
 
 interface PromptButtonProps {
   icon?: React.ReactElement;
@@ -53,38 +59,73 @@ export function MiddleSection() {
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  // State quản lý file
-  const [files, setFiles] = useState<File[]>([]);
+  // State quản lý file trước khi gửi
+  const [files, setFiles] = useState<UploadedFile[]>([]);
 
+  /** Gửi tin nhắn + file */
   const sendStream = async () => {
-    if (!inputValue.trim() || streaming) return;
+    if ((!inputValue.trim() && files.length === 0) || streaming) return;
 
-    const next = [...msgs, { role: "user" as Role, content: inputValue }];
-    setMsgs(next);
+    // 1. Gộp file vào message user
+    const newUserMessage: ChatMsg = {
+      role: "user",
+      content: inputValue,
+      files: files.map((f) => ({
+        name: f.name,
+        type: f.type,
+        fileId: f.fileId!,
+        previewUrl: f.previewUrl,
+      })),
+    };
+
+    const nextMsgs = [...msgs, newUserMessage];
+    setMsgs(nextMsgs);
+
+    // Reset input và files
     setInputValue("");
+    setFiles([]);
     setStreaming(true);
-    abortRef.current = new AbortController();
 
-    let acc = "";
+    // 2. Tạo AbortController
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    // 3. Thêm message assistant trống để stream dữ liệu về
     setMsgs((prev) => [...prev, { role: "assistant", content: "" }]);
 
+    // 4. Callback append delta trực tiếp vào state
     const onDelta = (delta: string) => {
-      acc += delta;
       setMsgs((prev) => {
         const copy = [...prev];
-        copy[copy.length - 1] = { role: "assistant", content: acc };
+        const last = copy[copy.length - 1];
+        if (last && last.role === "assistant") {
+          copy[copy.length - 1] = {
+            ...last,
+            content: last.content + delta,
+          };
+        }
         return copy;
       });
     };
 
     try {
-      await askStream(next, onDelta, "gpt-4o-mini", abortRef.current.signal);
+      await askStreamUnified(
+        nextMsgs,
+        onDelta,
+        files,
+        "gpt-4o-mini",
+        controller.signal
+      );
+    } catch (err) {
+      console.error("Error streaming:", err);
     } finally {
+      // 6. Reset trạng thái streaming
       setStreaming(false);
       abortRef.current = null;
     }
   };
 
+  /** Gửi bằng phím Enter */
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -92,18 +133,166 @@ export function MiddleSection() {
     }
   };
 
+  /** Tự động cuộn xuống cuối khi có message mới */
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs]);
 
-  const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFiles((prev) => [...prev, ...Array.from(e.target.files)]);
+  /** Upload file lên OpenAI */
+  const handleSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+
+    const selectedFiles = Array.from(e.target.files);
+
+    for (const file of selectedFiles) {
+      const previewUrl = URL.createObjectURL(file);
+
+      // 1. Thêm vào state trước với trạng thái uploading = true
+      setFiles((prev) => [
+        ...prev,
+        {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          previewUrl,
+          uploading: true, // đang upload
+        },
+      ]);
+
+      // 2. Bắt đầu upload lên server
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("purpose", "assistants");
+
+      try {
+        const res = await fetch(`${API_URL}/files`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${API_KEY}`,
+          },
+          body: formData,
+        });
+
+        if (!res.ok) throw new Error("Upload failed");
+        const data = await res.json();
+
+        // 3. Cập nhật lại fileId và chuyển uploading thành false
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.previewUrl === previewUrl
+              ? { ...f, fileId: data.id, uploading: false }
+              : f
+          )
+        );
+      } catch (err) {
+        console.error("Error uploading file:", err);
+        // Nếu lỗi thì xóa file này
+        setFiles((prev) => prev.filter((f) => f.previewUrl !== previewUrl));
+      }
+    }
+
+    e.target.value = "";
+  };
+
+  /** Xóa file trong queue trước khi gửi */
+  const removeFile = async (index: number) => {
+    try {
+      const fileToDelete = files[index];
+      if (!fileToDelete?.fileId) {
+        // Nếu chưa upload xong thì chỉ xóa local
+        setFiles((prev) => prev.filter((_, i) => i !== index));
+        return;
+      }
+
+      const res = await fetch(`${API_URL}/files/${fileToDelete.fileId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${API_KEY}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Xóa file thất bại: ${errText}`);
+      }
+
+      setFiles((prev) => prev.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error(error);
     }
   };
 
-  const removeFile = (index: number) => {
-    setFiles((prev) => prev.filter((_, i) => i !== index));
+  /** Render file đã gửi trong mỗi message */
+  const renderMessageFiles = (messageFiles?: UploadedFile[]) => {
+    if (!messageFiles || messageFiles.length === 0) return null;
+
+    return (
+      <VStack align="stretch" spacing={2} mt={2}>
+        {messageFiles.map((file, index) => {
+          const ext = file.name.split(".").pop() || "";
+          const { color, icon } = getFileMeta(ext);
+
+          return (
+            <Flex
+              key={index}
+              align="center"
+              border="1px solid #e2e2e2"
+              borderRadius="lg"
+              px={2}
+              py={2}
+              bg="gray.50"
+              gap={3}
+              w="fit-content"
+            >
+              {/* Nếu là ảnh → preview thumbnail */}
+              {file.type.startsWith("image/") ? (
+                <img
+                  src={file.previewUrl || ""}
+                  alt={file.name}
+                  style={{
+                    width: 60,
+                    height: 60,
+                    objectFit: "cover",
+                    borderRadius: "8px",
+                  }}
+                />
+              ) : (
+                <Box
+                  w="36px"
+                  h="36px"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  borderRadius="md"
+                  bg={color}
+                  color="white"
+                  fontSize="18px"
+                  flexShrink={0}
+                >
+                  {icon}
+                </Box>
+              )}
+
+              {/* Info */}
+              <Flex direction="column" flex="1" minW={0}>
+                <Text
+                  fontSize="sm"
+                  fontWeight="bold"
+                  whiteSpace="nowrap"
+                  textOverflow="ellipsis"
+                  overflow="hidden"
+                >
+                  {file.name}
+                </Text>
+                <Text fontSize="xs" color="gray.500">
+                  {ext.toUpperCase()}
+                </Text>
+              </Flex>
+            </Flex>
+          );
+        })}
+      </VStack>
+    );
   };
 
   const userBg = "#f7f7f8";
@@ -133,9 +322,23 @@ export function MiddleSection() {
                   lineHeight="1.6"
                   boxShadow="sm"
                 >
-                  <MarkdownMessage content={m.content} />
+                  {/* Nội dung text */}
+                  {m.content ? (
+                    <MarkdownMessage content={m.content} />
+                  ) : m.role === "assistant" && streaming ? (
+                    // Hiển thị animation 3 chấm khi assistant đang trả lời
+                    <Box className="typing-dots">
+                      <span></span>
+                      <span></span>
+                      <span></span>
+                    </Box>
+                  ) : null}
+
+                  {/* Files đính kèm trong message */}
+                  {m.files && renderMessageFiles(m.files as UploadedFile[])}
                 </Box>
               ))}
+
             <div ref={scrollRef} />
           </VStack>
         </Center>
@@ -196,21 +399,34 @@ export function MiddleSection() {
                         gap={3}
                         w="fit-content"
                       >
-                        {/* Icon */}
-                        <Box
-                          w="36px"
-                          h="36px"
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                          borderRadius="md"
-                          bg={color}
-                          color="white"
-                          fontSize="18px"
-                          flexShrink={0}
-                        >
-                          {icon}
-                        </Box>
+                        {/* Nếu là ảnh → preview thumbnail */}
+                        {file.type.startsWith("image/") ? (
+                          <img
+                            src={file.previewUrl || ""}
+                            alt={file.name}
+                            style={{
+                              width: 50,
+                              height: 50,
+                              objectFit: "cover",
+                              borderRadius: "6px",
+                            }}
+                          />
+                        ) : (
+                          <Box
+                            w="36px"
+                            h="36px"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            borderRadius="md"
+                            bg={color}
+                            color="white"
+                            fontSize="18px"
+                            flexShrink={0}
+                          >
+                            {icon}
+                          </Box>
+                        )}
 
                         {/* Info */}
                         <Flex direction="column" flex="1" minW={0}>
@@ -228,15 +444,19 @@ export function MiddleSection() {
                           </Text>
                         </Flex>
 
-                        {/* Remove */}
-                        <IconButton
-                          aria-label="Remove file"
-                          size="xs"
-                          variant="ghost"
-                          onClick={() => removeFile(index)}
-                        >
-                          ✕
-                        </IconButton>
+                        {/* Nếu đang upload → Spinner */}
+                        {file.uploading ? (
+                          <Spinner size="sm" color="blue.500" />
+                        ) : (
+                          <IconButton
+                            aria-label="Remove file"
+                            size="xs"
+                            variant="ghost"
+                            onClick={() => removeFile(index)}
+                          >
+                            ✕
+                          </IconButton>
+                        )}
                       </Flex>
                     );
                   })}
@@ -270,7 +490,9 @@ export function MiddleSection() {
               aria-label="Send message"
               size="sm"
               borderRadius="full"
-              disabled={inputValue.trim() === "" || streaming}
+              disabled={
+                (inputValue.trim() === "" && files.length === 0) || streaming
+              }
               onClick={sendStream}
               variant="solid"
             >
