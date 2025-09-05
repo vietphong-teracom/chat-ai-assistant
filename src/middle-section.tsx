@@ -210,7 +210,7 @@ export function MiddleSection() {
               px={2}
               py={2}
               bg="gray.50"
-              gap={3}
+              spacing={3}
               w="fit-content"
             >
               {/* Nếu là ảnh → preview thumbnail */}
