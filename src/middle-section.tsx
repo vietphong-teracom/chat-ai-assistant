@@ -1,31 +1,8 @@
-import {
-  Box,
-  Center,
-  Flex,
-  Heading,
-  HStack,
-  IconButton,
-  VStack,
-  Text,
-  Spinner,
-} from "@chakra-ui/react";
-import {
-  BirthdayIcon,
-  ChartIcon,
-  CodeIcon,
-  EnterIcon,
-  IllustrationIcon,
-  UploadIcon,
-} from "./icons/other-icons";
+import { Box, Center, Flex, Heading, HStack, IconButton, VStack, Text, Spinner } from "@chakra-ui/react";
+import { BirthdayIcon, ChartIcon, CodeIcon, EnterIcon, IllustrationIcon, UploadIcon } from "./icons/other-icons";
 import { useState, useRef, useEffect } from "react";
 import { Button } from "./components/ui/button";
-import {
-  API_KEY,
-  API_URL,
-  askStreamUnified,
-  ChatMsg,
-  UploadedFile,
-} from "./lib/openai";
+import { API_KEY, API_URL, askStreamUnified, ChatMsg, UploadedFile } from "./lib/openai";
 import { MarkdownMessage } from "./MarkdownMessage";
 import type { KeyboardEvent, SetStateAction } from "react";
 import TextareaAutosize from "react-textarea-autosize";
@@ -109,13 +86,7 @@ export function MiddleSection() {
     };
 
     try {
-      await askStreamUnified(
-        nextMsgs,
-        onDelta,
-        files,
-        "gpt-4o-mini",
-        controller.signal
-      );
+      await askStreamUnified(nextMsgs, onDelta, files, "gpt-4o-mini", controller.signal);
     } catch (err) {
       console.error("Error streaming:", err);
     } finally {
@@ -178,11 +149,7 @@ export function MiddleSection() {
 
         // 3. Cập nhật lại fileId và chuyển uploading thành false
         setFiles((prev) =>
-          prev.map((f) =>
-            f.previewUrl === previewUrl
-              ? { ...f, fileId: data.id, uploading: false }
-              : f
-          )
+          prev.map((f) => (f.previewUrl === previewUrl ? { ...f, fileId: data.id, uploading: false } : f))
         );
       } catch (err) {
         console.error("Error uploading file:", err);
@@ -227,7 +194,7 @@ export function MiddleSection() {
     if (!messageFiles || messageFiles.length === 0) return null;
 
     return (
-      <VStack align="stretch" spacing={2} mt={2}>
+      <VStack align="stretch" gap={2} mt={2}>
         {messageFiles.map((file, index) => {
           const ext = file.name.split(".").pop() || "";
           const { color, icon } = getFileMeta(ext);
@@ -275,13 +242,7 @@ export function MiddleSection() {
 
               {/* Info */}
               <Flex direction="column" flex="1" minW={0}>
-                <Text
-                  fontSize="sm"
-                  fontWeight="bold"
-                  whiteSpace="nowrap"
-                  textOverflow="ellipsis"
-                  overflow="hidden"
-                >
+                <Text fontSize="sm" fontWeight="bold" whiteSpace="nowrap" textOverflow="ellipsis" overflow="hidden">
                   {file.name}
                 </Text>
                 <Text fontSize="xs" color="gray.500">
@@ -357,13 +318,7 @@ export function MiddleSection() {
           >
             {/* Upload */}
             <Box w="40px" flexShrink={0}>
-              <input
-                type="file"
-                id="file-input"
-                style={{ display: "none" }}
-                multiple
-                onChange={handleSelect}
-              />
+              <input type="file" id="file-input" style={{ display: "none" }} multiple onChange={handleSelect} />
               <label htmlFor="file-input">
                 <IconButton
                   aria-label="Upload file"
@@ -380,9 +335,9 @@ export function MiddleSection() {
             </Box>
 
             {/* Files + textarea */}
-            <VStack flex="1" align="stretch" spacing={1}>
+            <VStack flex="1" align="stretch" gap={1}>
               {files.length > 0 && (
-                <VStack align="stretch" spacing={2}>
+                <VStack align="stretch" gap={2}>
                   {files.map((file, index) => {
                     const ext = file.name.split(".").pop() || "";
                     const { color, icon } = getFileMeta(ext);
@@ -469,9 +424,7 @@ export function MiddleSection() {
                 maxRows={5}
                 placeholder="Message ChatGPT"
                 value={inputValue}
-                onChange={(e: { target: { value: SetStateAction<string> } }) =>
-                  setInputValue(e.target.value)
-                }
+                onChange={(e: { target: { value: SetStateAction<string> } }) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 style={{
                   width: "100%",
@@ -490,9 +443,7 @@ export function MiddleSection() {
               aria-label="Send message"
               size="sm"
               borderRadius="full"
-              disabled={
-                (inputValue.trim() === "" && files.length === 0) || streaming
-              }
+              disabled={(inputValue.trim() === "" && files.length === 0) || streaming}
               onClick={sendStream}
               variant="solid"
             >
@@ -503,22 +454,10 @@ export function MiddleSection() {
 
         {/* Prompt buttons */}
         <HStack gap="2">
-          <PromptButton
-            icon={<IllustrationIcon color="green.500" fontSize="lg" />}
-            description="Create image"
-          />
-          <PromptButton
-            icon={<CodeIcon color="blue.500" fontSize="lg" />}
-            description="Code"
-          />
-          <PromptButton
-            icon={<ChartIcon color="cyan.400" fontSize="lg" />}
-            description="Analyze data"
-          />
-          <PromptButton
-            icon={<BirthdayIcon color="cyan.400" fontSize="lg" />}
-            description="Surprise"
-          />
+          <PromptButton icon={<IllustrationIcon color="green.500" fontSize="lg" />} description="Create image" />
+          <PromptButton icon={<CodeIcon color="blue.500" fontSize="lg" />} description="Code" />
+          <PromptButton icon={<ChartIcon color="cyan.400" fontSize="lg" />} description="Analyze data" />
+          <PromptButton icon={<BirthdayIcon color="cyan.400" fontSize="lg" />} description="Surprise" />
           <PromptButton description="More" />
         </HStack>
       </VStack>
