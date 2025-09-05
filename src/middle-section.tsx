@@ -5,14 +5,9 @@ import {
   Heading,
   HStack,
   IconButton,
-  Textarea,
   VStack,
+  Text,
 } from "@chakra-ui/react";
-import {
-  FileUploadList,
-  FileUploadRoot,
-  FileUploadTrigger,
-} from "./components/ui/file-button";
 import {
   BirthdayIcon,
   ChartIcon,
@@ -27,6 +22,9 @@ import { askStream, ChatMsg, Role } from "./lib/openai";
 import { MarkdownMessage } from "./MarkdownMessage";
 import type { KeyboardEvent, SetStateAction } from "react";
 import TextareaAutosize from "react-textarea-autosize";
+import { getFileMeta } from "./helper";
+
+// ✅ import getFileMeta
 
 interface PromptButtonProps {
   icon?: React.ReactElement;
@@ -54,6 +52,9 @@ export function MiddleSection() {
   const [streaming, setStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  // State quản lý file
+  const [files, setFiles] = useState<File[]>([]);
 
   const sendStream = async () => {
     if (!inputValue.trim() || streaming) return;
@@ -86,15 +87,24 @@ export function MiddleSection() {
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault(); // Ngăn xuống dòng
+      e.preventDefault();
       sendStream();
     }
-    // Shift + Enter → xuống dòng tự động
   };
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [msgs]);
+
+  const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      setFiles((prev) => [...prev, ...Array.from(e.target.files)]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const userBg = "#f7f7f8";
   const assistantBg = "#ffffff";
@@ -140,48 +150,122 @@ export function MiddleSection() {
             p={2}
             align="center"
             gap={2}
+            bg="white"
           >
-            {/* Icon upload bên trái, width cố định */}
+            {/* Upload */}
             <Box w="40px" flexShrink={0}>
-              <FileUploadRoot>
-                <FileUploadTrigger asChild>
-                  <IconButton
-                    aria-label="Upload file"
-                    size="sm"
-                    borderRadius="full"
-                    variant="ghost"
-                    w="100%"
-                    h="100%"
-                  >
-                    <UploadIcon fontSize="2xl" />
-                  </IconButton>
-                </FileUploadTrigger>
-                <FileUploadList />
-              </FileUploadRoot>
+              <input
+                type="file"
+                id="file-input"
+                style={{ display: "none" }}
+                multiple
+                onChange={handleSelect}
+              />
+              <label htmlFor="file-input">
+                <IconButton
+                  aria-label="Upload file"
+                  size="sm"
+                  borderRadius="full"
+                  variant="ghost"
+                  as="span"
+                  w="100%"
+                  h="100%"
+                >
+                  <UploadIcon fontSize="2xl" />
+                </IconButton>
+              </label>
             </Box>
 
-            {/* Textarea */}
-            <TextareaAutosize
-              minRows={1}
-              maxRows={5}
-              placeholder="Message ChatGPT"
-              value={inputValue}
-              onChange={(e: { target: { value: SetStateAction<string> } }) =>
-                setInputValue(e.target.value)
-              }
-              onKeyDown={handleKeyDown}
-              style={{
-                width: "100%",
-                borderRadius: "24px",
-                padding: "8px 12px",
-                resize: "none",
-                border: "none",
-                outline: "none",
-                background: "transparent",
-              }}
-            />
+            {/* Files + textarea */}
+            <VStack flex="1" align="stretch" spacing={1}>
+              {files.length > 0 && (
+                <VStack align="stretch" spacing={2}>
+                  {files.map((file, index) => {
+                    const ext = file.name.split(".").pop() || "";
+                    const { color, icon } = getFileMeta(ext);
 
-            {/* Icon gửi bên phải */}
+                    return (
+                      <Flex
+                        key={index}
+                        align="center"
+                        border="1px solid #e2e2e2"
+                        borderRadius="lg"
+                        px={2}
+                        py={2}
+                        bg="gray.50"
+                        gap={3}
+                        w="fit-content"
+                      >
+                        {/* Icon */}
+                        <Box
+                          w="36px"
+                          h="36px"
+                          display="flex"
+                          alignItems="center"
+                          justifyContent="center"
+                          borderRadius="md"
+                          bg={color}
+                          color="white"
+                          fontSize="18px"
+                          flexShrink={0}
+                        >
+                          {icon}
+                        </Box>
+
+                        {/* Info */}
+                        <Flex direction="column" flex="1" minW={0}>
+                          <Text
+                            fontSize="sm"
+                            fontWeight="bold"
+                            whiteSpace="nowrap"
+                            textOverflow="ellipsis"
+                            overflow="hidden"
+                          >
+                            {file.name}
+                          </Text>
+                          <Text fontSize="xs" color="gray.500">
+                            {ext.toUpperCase()}
+                          </Text>
+                        </Flex>
+
+                        {/* Remove */}
+                        <IconButton
+                          aria-label="Remove file"
+                          size="xs"
+                          variant="ghost"
+                          onClick={() => removeFile(index)}
+                        >
+                          ✕
+                        </IconButton>
+                      </Flex>
+                    );
+                  })}
+                </VStack>
+              )}
+
+              {/* Textarea */}
+              <TextareaAutosize
+                minRows={1}
+                maxRows={5}
+                placeholder="Message ChatGPT"
+                value={inputValue}
+                onChange={(e: { target: { value: SetStateAction<string> } }) =>
+                  setInputValue(e.target.value)
+                }
+                onKeyDown={handleKeyDown}
+                style={{
+                  width: "100%",
+                  borderRadius: "24px",
+                  padding: "6px 10px",
+                  resize: "none",
+                  border: "none",
+                  outline: "none",
+                  background: "transparent",
+                }}
+              />
+            </VStack>
+
+            {/* Send */}
             <IconButton
               aria-label="Send message"
               size="sm"
