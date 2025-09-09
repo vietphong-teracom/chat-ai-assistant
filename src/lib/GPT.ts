@@ -1,23 +1,7 @@
-// src/lib/openai.ts
-export type Role = "user" | "assistant" | "system";
+import { ChatMsg, UploadedFile } from "@/types";
 
-export type ChatMsg = {
-  role: Role;
-  content: string;
-  files?: UploadedFile[]; // Thêm thuộc tính files tùy chọn
-};
-
-export interface UploadedFile {
-  name: string;
-  size: number;
-  type: string;
-  fileId?: string; // id từ OpenAI trả về
-  previewUrl?: string; // để hiển thị ảnh hoặc file blob trước khi gửi
-  uploading: boolean; // trạng thái đang upload
-}
-
-export const API_KEY = import.meta.env.VITE_OPENAI_API_KEY as string;
-export const API_URL = import.meta.env.VITE_OPENAI_API_URL as string;
+const API_KEY = import.meta.env.VITE_OPENAI_API_KEY as string;
+const API_URL = import.meta.env.VITE_OPENAI_API_URL as string;
 
 if (!API_KEY) {
   throw new Error("Missing VITE_OPENAI_API_KEY in environment variables");
@@ -25,12 +9,12 @@ if (!API_KEY) {
 if (!API_URL) {
   throw new Error("Missing VITE_OPENAI_API_URL in environment variables");
 }
-// src/lib/openai.ts
-export async function askStreamUnified(
+
+export async function askGPT(
   messages: ChatMsg[],
   onDelta: (delta: string) => void,
   files: UploadedFile[] = [],
-  model = "gpt-4o-mini",
+  model = "gpt-5",
   signal?: AbortSignal
 ) {
   // Chỉ gửi user + system message, bỏ qua assistant
