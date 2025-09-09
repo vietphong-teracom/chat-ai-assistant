@@ -22,7 +22,7 @@ export function TopSection() {
               <NewChatIcon fontSize="2xl" color="fg.muted" />
             </IconButton>
           </Tooltip>
-          <ChatGPTMenu />
+          {/* <ChatGPTMenu /> */}
         </Flex>
       )}
       {sideBarVisible && <ChatGPTMenu />}
