@@ -14,3 +14,10 @@ export interface UploadedFile {
   previewUrl?: string; // để hiển thị ảnh hoặc file blob trước khi gửi
   uploading: boolean; // trạng thái đang upload
 }
+
+export type InputContent = { type: "input_text"; text: string } | { type: "input_file"; file_id: string };
+
+export type InputMessage = {
+  role: "user" | "system";
+  content: InputContent[];
+};

@@ -1,4 +1,4 @@
-import { ChatMsg, UploadedFile } from "@/types";
+import { ChatMsg, InputContent, UploadedFile } from "@/types";
 
 const API_KEY = import.meta.env.VITE_OPENAI_API_KEY as string;
 const API_URL = import.meta.env.VITE_OPENAI_API_URL as string;
@@ -10,18 +10,14 @@ if (!API_URL) {
   throw new Error("Missing VITE_OPENAI_API_URL in environment variables");
 }
 
-export async function askGPT(
-  messages: ChatMsg[],
-  onDelta: (delta: string) => void,
-  files: UploadedFile[] = [],
-  model = "gpt-5",
-  signal?: AbortSignal
-) {
-  // Chỉ gửi user + system message, bỏ qua assistant
-  const input = messages
+/**
+ * Build input messages theo định dạng API yêu cầu
+ */
+function buildInput(messages: ChatMsg[], files: UploadedFile[]) {
+  return messages
     .filter((m) => m.role === "user" || m.role === "system")
     .map((msg) => {
-      const content: any[] = [{ type: "input_text", text: msg.content }];
+      const content: InputContent[] = [{ type: "input_text", text: msg.content }];
 
       // Nếu là user và có file, append file_id
       if (msg.role === "user" && files.length > 0) {
@@ -37,13 +33,12 @@ export async function askGPT(
         content,
       };
     });
+}
 
-  const body: any = {
-    model,
-    input,
-    stream: true,
-  };
-
+/**
+ * Gửi request lên API
+ */
+async function fetchChatResponse(body: object, signal?: AbortSignal): Promise<Response> {
   const res = await fetch(`${API_URL}/responses`, {
     method: "POST",
     headers: {
@@ -54,11 +49,28 @@ export async function askGPT(
     signal,
   });
 
+  // if (!res.ok) {
+  //   const errText = await res.text();
+  //   throw new Error(`OpenAI API error: ${errText}`);
+  // }
   if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`OpenAI API error: ${errText}`);
+    let errMsg = `Request failed: ${res.status}`;
+    try {
+      const errJson = await res.json();
+      errMsg = errJson.error?.message || JSON.stringify(errJson);
+    } catch {
+      errMsg = await res.text();
+    }
+    throw new Error(`OpenAI API error: ${errMsg}`);
   }
 
+  return res;
+}
+
+/**
+ * Xử lý stream dữ liệu từ API, parse JSON từng dòng, gọi callback với delta text
+ */
+async function handleStream(res: Response, onDelta: (delta: string) => void) {
   if (!res.body) return;
 
   const reader = res.body.getReader();
@@ -78,8 +90,6 @@ export async function askGPT(
 
       try {
         const evt = JSON.parse(jsonStr);
-
-        // delta streaming text từ assistant
         if (evt.type === "response.output_text.delta" && evt.delta) {
           onDelta(evt.delta);
         }
@@ -88,4 +98,26 @@ export async function askGPT(
       }
     }
   }
+}
+
+/**
+ * Hàm chính gọi API GPT và stream dữ liệu về
+ */
+export async function askGPT(
+  messages: ChatMsg[],
+  onDelta: (delta: string) => void,
+  files: UploadedFile[] = [],
+  signal?: AbortSignal
+) {
+  const input = buildInput(messages, files);
+
+  const body = {
+    model: "gpt-5",
+    input,
+    stream: true,
+  };
+
+  const res = await fetchChatResponse(body, signal);
+
+  await handleStream(res, onDelta);
 }
