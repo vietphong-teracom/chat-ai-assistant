@@ -50,7 +50,7 @@ export function Sidebar() {
           >
             <Link href="#" variant="plain" _hover={{ textDecor: "none" }}>
               <Circle size="6" bg="bg" borderWidth="1px">
-                <SmallGPTIcon fontSize="md" />
+                <SmallGPTIcon />
               </Circle>
               <Text fontSize="sm" fontWeight="md">
                 Hitex AI Assistants
