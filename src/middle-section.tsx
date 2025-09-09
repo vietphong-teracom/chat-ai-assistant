@@ -1,10 +1,11 @@
-import { Box, Center, Flex, Heading, IconButton, Spinner, Text, VStack } from "@chakra-ui/react";
+import { Alert, Box, Center, Flex, Heading, IconButton, Spinner, Text, VStack } from "@chakra-ui/react";
 import type { KeyboardEvent, SetStateAction } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import "../src/lib/index.css";
 import { FileMessages } from "./FileMessage";
 import { getFileMeta } from "./helper";
-import { useChat } from "./hooks/useChat";
+import { useChatState } from "./hooks/useChatState";
+import { useChatStream } from "./hooks/useChatStream";
 import { EnterIcon, UploadIcon } from "./icons/other-icons";
 import { removeFile } from "./lib/remove-file-uploaded";
 import { uploadFile } from "./lib/upload-file";
@@ -13,12 +14,38 @@ import { PromptButtons } from "./PromptButton";
 import { UploadedFile } from "./types";
 
 export function MiddleSection() {
-  const { msgs, streaming, files, setFiles, inputValue, setInputValue, sendStream, scrollRef } = useChat();
+  const {
+    msgs,
+    setMsgs,
+    streaming,
+    setStreaming,
+    files,
+    setFiles,
+    inputValue,
+    setInputValue,
+    error,
+    setError,
+    abortRef,
+    scrollRef,
+  } = useChatState();
+
+  const { sendMessage } = useChatStream({
+    msgs,
+    setMsgs,
+    files,
+    setFiles,
+    inputValue,
+    setInputValue,
+    streaming,
+    setStreaming,
+    abortRef,
+    setError,
+  });
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendStream();
+      sendMessage();
     }
   };
 
@@ -61,6 +88,15 @@ export function MiddleSection() {
     <Center flex="1">
       <VStack gap="6" w="100%">
         <Heading size="3xl">What can I help with?</Heading>
+
+        {/* Error message */}
+        {error && (
+          <Alert.Root status="error" borderRadius="md">
+            <Alert.Indicator />
+            <Alert.Title>Error:</Alert.Title>
+            <Alert.Description>{error}</Alert.Description>
+          </Alert.Root>
+        )}
 
         {/* Conversation */}
         <Center w="100%">
@@ -241,7 +277,7 @@ export function MiddleSection() {
               size="sm"
               borderRadius="full"
               disabled={(inputValue.trim() === "" && files.length === 0) || streaming}
-              onClick={sendStream}
+              onClick={sendMessage}
               variant="solid"
             >
               <EnterIcon fontSize="2xl" />
