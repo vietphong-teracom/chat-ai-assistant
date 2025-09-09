@@ -28,7 +28,7 @@ export function NewChatIcon(props: IconProps) {
   );
 }
 
-export function SmallGPTIcon(props: IconProps) {
+export function SmallGPTIcon() {
   return <Image src="https://hitexglobal.vn/favicon.png" alt="My SVG Icon" boxSize="20px" />;
 }
 

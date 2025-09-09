@@ -10,7 +10,6 @@ import { EnterIcon, UploadIcon } from "./icons/other-icons";
 import { removeFile } from "./lib/remove-file-uploaded";
 import { uploadFile } from "./lib/upload-file";
 import { Message } from "./Message";
-import { PromptButtons } from "./PromptButton";
 
 export function MiddleSection() {
   const {
