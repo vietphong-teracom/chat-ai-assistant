@@ -222,7 +222,7 @@ export function MiddleSection() {
               <TextareaAutosize
                 minRows={1}
                 maxRows={5}
-                placeholder="Message ChatGPT"
+                placeholder="Input message here"
                 value={inputValue}
                 onChange={(e: { target: { value: SetStateAction<string> } }) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
