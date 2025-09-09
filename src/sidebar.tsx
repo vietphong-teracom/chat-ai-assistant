@@ -9,7 +9,8 @@ export function Sidebar() {
 
   return (
     <Box
-      bg="bg.muted"
+      bg="#15223a"
+      color="white"
       w={!sideBarVisible ? "0" : "260px"}
       overflow="hidden"
       transition=" width 0.3s"
@@ -45,13 +46,14 @@ export function Sidebar() {
             borderRadius="lg"
             w="100%"
             whiteSpace="nowrap"
+            bg="gray.200"
           >
             <Link href="#" variant="plain" _hover={{ textDecor: "none" }}>
               <Circle size="6" bg="bg" borderWidth="1px">
-                <SmallGPTIcon fontSize="md" />
+                <SmallGPTIcon />
               </Circle>
               <Text fontSize="sm" fontWeight="md">
-                ChatGPT
+                Hitex AI Assistants
               </Text>
             </Link>
             <AbsoluteCenter axis="vertical" right="2" display="none" _groupHover={{ display: "initial" }}>
@@ -71,26 +73,35 @@ export function Sidebar() {
             borderRadius="lg"
             w="100%"
             whiteSpace="nowrap"
+            bg="gray.200"
+            mt={3}
           >
             <Link href="#" variant="plain" _hover={{ textDecor: "none" }}>
               <ExploreGPTIcon fontSize="md" />
 
               <Text fontSize="sm" fontWeight="md">
-                Explore GPTs
+                Explore ChatBot
               </Text>
             </Link>
           </HStack>
         </Stack>
 
-        <Link href="#" _hover={{ textDecor: "none", layerStyle: "fill.muted" }} borderRadius="lg" px="1" py="2">
+        <Link
+          href="#"
+          _hover={{ textDecor: "none", layerStyle: "fill.muted" }}
+          borderRadius="lg"
+          px="1"
+          py="2"
+          bg="gray.200"
+        >
           <HStack whiteSpace="nowrap">
             <Circle size="8" fontSize="lg" borderWidth="1px">
               <UpgradeIcon />
             </Circle>
             <Stack gap="0" fontWeight="medium">
-              <Text fontSize="sm">Upgrade plan</Text>
+              <Text fontSize="sm">@Authority</Text>
               <Text fontSize="xs" color="fg.subtle">
-                More access to the best models
+                Design by Teracom AI Team
               </Text>
             </Stack>
           </HStack>

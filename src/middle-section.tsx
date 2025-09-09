@@ -1,17 +1,15 @@
-import { Alert, Box, Center, Flex, Heading, IconButton, Spinner, Text, VStack } from "@chakra-ui/react";
+import { Box, Center, Flex, Heading, IconButton, Spinner, Text, VStack } from "@chakra-ui/react";
 import type { KeyboardEvent, SetStateAction } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import "../src/lib/index.css";
-import { FileMessages } from "./FileMessage";
+import { ErrorMessage } from "./ErrorMessage";
 import { getFileMeta } from "./helper";
 import { useChatState } from "./hooks/useChatState";
 import { useChatStream } from "./hooks/useChatStream";
 import { EnterIcon, UploadIcon } from "./icons/other-icons";
 import { removeFile } from "./lib/remove-file-uploaded";
 import { uploadFile } from "./lib/upload-file";
-import { MarkdownMessage } from "./MarkdownMessage";
-import { PromptButtons } from "./PromptButton";
-import { UploadedFile } from "./types";
+import { Message } from "./Message";
 
 export function MiddleSection() {
   const {
@@ -84,55 +82,24 @@ export function MiddleSection() {
     e.target.value = "";
   };
 
+  // Handler khi bấm nút Summary News
+
   return (
-    <Center flex="1">
+    <Center flex="1" bg="#9ca3af38">
       <VStack gap="6" w="100%">
         <Heading size="3xl">What can I help with?</Heading>
 
         {/* Error message */}
-        {error && (
-          <Alert.Root status="error" borderRadius="md">
-            <Alert.Indicator />
-            <Alert.Title>Error:</Alert.Title>
-            <Alert.Description>{error}</Alert.Description>
-          </Alert.Root>
-        )}
+        {error && <ErrorMessage error={error} />}
 
         {/* Conversation */}
         <Center w="100%">
           <VStack gap={4} align="stretch" maxW="768px" w="100%">
             {msgs
               .filter((msg) => msg.role !== "system")
-              .map((msg, i) => (
-                <Box
-                  key={i}
-                  alignSelf={msg.role === "user" ? "flex-end" : "flex-start"}
-                  px={4}
-                  py={3}
-                  borderRadius="xl"
-                  bg={msg.role === "user" ? "#f7f7f8" : "#ffffff"}
-                  color={"#111111"}
-                  fontSize="15px"
-                  lineHeight="1.6"
-                  boxShadow="sm"
-                >
-                  {/* Nội dung text */}
-                  {msg.content ? (
-                    <MarkdownMessage content={msg.content} />
-                  ) : msg.role === "assistant" && streaming ? (
-                    // Hiển thị animation 3 chấm khi assistant đang trả lời
-                    <Box className="typing-dots">
-                      <span></span>
-                      <span></span>
-                      <span></span>
-                    </Box>
-                  ) : null}
-
-                  {/* Files đính kèm trong message */}
-                  {msg.files && <FileMessages files={msg.files as UploadedFile[]} />}
-                </Box>
+              .map((msg, index) => (
+                <Message msg={msg} index={index} streaming={streaming} />
               ))}
-
             <div ref={scrollRef} />
           </VStack>
         </Center>
@@ -280,13 +247,13 @@ export function MiddleSection() {
               onClick={sendMessage}
               variant="solid"
             >
-              <EnterIcon fontSize="2xl" />
+              <EnterIcon fontSize="4xl" />
             </IconButton>
           </Flex>
         </Center>
 
         {/* Prompt buttons */}
-        <PromptButtons />
+        {/* <PromptButtons onSummaryNews={() => handleSummaryNewsClick("vnexpress")} /> */}
       </VStack>
     </Center>
   );
