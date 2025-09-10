@@ -1,7 +1,7 @@
 // src/hooks/useChatStream.ts
 import type { ChatMsg, UploadedFile } from "@/types";
 import { askGPT } from "@/lib/GPT";
-import { fetchRssAsJson, fetchRssAsText } from "@/lib/fetchRss";
+import { fetchTopArticlesText } from "@/lib/fetchRss";
 
 interface UseChatStreamProps {
   msgs: ChatMsg[];
@@ -99,33 +99,35 @@ export function useChatStream({
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // Lấy last user message (caller phải pass providedMsgs có chứa user message ở cuối)
+    // Validate last user message exists
     const lastMsg = providedMsgs[providedMsgs.length - 1];
     if (!lastMsg || lastMsg.role !== "user") {
       setError("Internal: expected last message to be user message");
       return;
     }
 
-    // 1) Fetch RSS
     setStreaming(true);
+
+    // Add a temporary assistant message to show progress
+    setMsgs((prev) => [...prev, { role: "assistant", content: "Đang lấy tin từ nguồn..." }]);
+
     try {
-      // optional: show a temporary assistant message (đang lấy nguồn)
-      setMsgs((prev) => [...prev, { role: "assistant", content: "Đang lấy tin từ nguồn..." }]);
+      // 1) fetch feed as text (top N articles)
+      const feedText = await fetchTopArticlesText(feedUrl, 5, controller.signal);
 
-      const feedText = await fetchRssAsText(feedUrl, 5, controller.signal);
-
-      // 2) Gộp content để gửi tới API (NHƯNG không update UI với content dài)
+      // 2) construct final user content (we do NOT show the full feedText in UI to keep it clean)
       const finalUserContent = `Nguồn: ${feedUrl}\n\n${feedText}\n\nYêu cầu: ${lastMsg.content}`;
 
-      // Chuẩn bị messages sẽ gửi tới API: thay thế last user message bằng finalUserContent
-      const msgsForApi = [...providedMsgs.slice(0, -1), { ...lastMsg, content: finalUserContent }];
+      // 3) prepare messages for API: replace last user message with enriched content
+      const msgsForApi: ChatMsg[] = [...providedMsgs.slice(0, -1), { ...lastMsg, content: finalUserContent }];
 
-      // Remove the temporary "Đang lấy tin..." assistant message we just added
+      // remove temporary assistant progress message we just appended
       setMsgs((prev) => prev.slice(0, Math.max(0, prev.length - 1)));
 
-      // 3) Append assistant placeholder for streaming in UI
+      // append assistant placeholder (empty) for streaming results
       setMsgs((prev) => [...prev, { role: "assistant", content: "" }]);
 
+      // callback to append deltas to last assistant message
       const onDelta = (delta: string) => {
         setMsgs((prev) => {
           const copy = [...prev];
@@ -137,17 +139,15 @@ export function useChatStream({
         });
       };
 
-      // 4) Call askGPT with msgsForApi (user content enriched)
+      // 4) call the GPT streaming API
       await askGPT(msgsForApi, onDelta, [], controller.signal);
       setError(null);
     } catch (err: any) {
-      if (err.name === "AbortError") {
-        setError("Đã hủy truy vấn.");
-      } else {
-        setError(err?.message ?? "Lỗi khi lấy/tóm tắt tin tức");
-      }
+      if (err?.name === "AbortError") setError("Đã hủy truy vấn.");
+      else setError(err?.message ?? "Lỗi khi lấy/tóm tắt tin tức");
       console.error("sendNewsSummary error:", err);
-      // Remove the temporary assistant entry if exists
+
+      // remove the temporary assistant entry if it exists
       setMsgs((prev) => prev.slice(0, Math.max(0, prev.length - 1)));
     } finally {
       setStreaming(false);
@@ -155,30 +155,5 @@ export function useChatStream({
     }
   }
 
-  async function sendNewsSummaryJSON() {
-    try {
-      const rssUrl = "https://vnexpress.net/rss/tin-moi-nhat.rss";
-
-      // Lấy JSON từ RSS
-      const data = await fetchRssAsJson(rssUrl);
-
-      // Chọn 3-5 bài mới nhất
-      const topArticles = data.items.slice(0, 5);
-
-      // Gom nội dung để gửi sang GPT
-      const textContent = topArticles
-        .map((item: any, idx: number) => `${idx + 1}. ${item.title} - ${item.link}`)
-        .join("\n");
-
-      // Bây giờ bạn gọi API GPT để tóm tắt
-      const userPrompt = `Hãy tóm tắt ngắn gọn các tin tức sau:\n${textContent}`;
-
-      return userPrompt; // bạn có thể gửi cái này sang luồng askGPT sẵn có
-    } catch (err) {
-      console.error("sendNewsSummary error:", err);
-      throw err;
-    }
-  }
-
-  return { sendMessage, sendNewsSummary, sendNewsSummaryJSON };
+  return { sendMessage, sendNewsSummary };
 }

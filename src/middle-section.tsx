@@ -1,15 +1,16 @@
-import { Box, Center, Flex, Heading, IconButton, Spinner, Text, VStack } from "@chakra-ui/react";
+import { Box, Center, Flex, Heading, IconButton, VStack } from "@chakra-ui/react";
 import type { KeyboardEvent, SetStateAction } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import "../src/lib/index.css";
+import { Conversation } from "./Conversation";
 import { ErrorMessage } from "./ErrorMessage";
-import { getFileMeta } from "./helper";
+import { FilePreview } from "./FilePreview";
 import { useChatState } from "./hooks/useChatState";
 import { useChatStream } from "./hooks/useChatStream";
 import { EnterIcon, UploadIcon } from "./icons/other-icons";
-import { removeFile } from "./lib/remove-file-uploaded";
 import { uploadFile } from "./lib/upload-file";
-import { Message } from "./Message";
+import { PromptButtons } from "./PromptButton";
+import { ChatMsg } from "./types";
 
 export function MiddleSection() {
   const {
@@ -27,7 +28,7 @@ export function MiddleSection() {
     scrollRef,
   } = useChatState();
 
-  const { sendMessage } = useChatStream({
+  const { sendMessage, sendNewsSummary } = useChatStream({
     msgs,
     setMsgs,
     files,
@@ -83,6 +84,21 @@ export function MiddleSection() {
   };
 
   // Handler khi bấm nút Summary News
+  const handleSummaryNewsClick = async (feedKey = "vnexpress") => {
+    if (streaming) return;
+    setError(null);
+
+    const userContent = "Tóm tắt tin tức mới nhất trong ngày";
+    const userMsg: ChatMsg = { role: "user", content: userContent };
+
+    // Append user message immediately to UI
+    const nextMsgs = [...msgs, userMsg];
+    setMsgs(nextMsgs);
+
+    // Call the stream flow that will fetch RSS & call GPT
+    // sendNewsSummary expects providedMsgs array including the user message
+    sendNewsSummary(nextMsgs, feedKey);
+  };
 
   return (
     <Center flex="1" bg="#9ca3af38">
@@ -94,14 +110,7 @@ export function MiddleSection() {
 
         {/* Conversation */}
         <Center w="100%">
-          <VStack gap={4} align="stretch" maxW="768px" w="100%">
-            {msgs
-              .filter((msg) => msg.role !== "system")
-              .map((msg, index) => (
-                <Message msg={msg} index={index} streaming={streaming} />
-              ))}
-            <div ref={scrollRef} />
-          </VStack>
+          <Conversation msgs={msgs} streaming={streaming} scrollRef={scrollRef} />
         </Center>
 
         {/* Input */}
@@ -134,91 +143,9 @@ export function MiddleSection() {
               </label>
             </Box>
 
-            {/* Files + textarea */}
+            {/* Files Preview + textarea */}
             <VStack flex="1" align="stretch" gap={1}>
-              {files.length > 0 && (
-                <VStack align="stretch" gap={2}>
-                  {files.map((file, index) => {
-                    const ext = file.name.split(".").pop() || "";
-                    const { color, icon } = getFileMeta(ext);
-
-                    return (
-                      <Flex
-                        key={index}
-                        align="center"
-                        border="1px solid #e2e2e2"
-                        borderRadius="lg"
-                        px={2}
-                        py={2}
-                        bg="gray.50"
-                        gap={3}
-                        w="fit-content"
-                      >
-                        {/* Nếu là ảnh → preview thumbnail */}
-                        {file.type.startsWith("image/") ? (
-                          <img
-                            src={file.previewUrl || ""}
-                            alt={file.name}
-                            style={{
-                              width: 50,
-                              height: 50,
-                              objectFit: "cover",
-                              borderRadius: "6px",
-                            }}
-                          />
-                        ) : (
-                          <Box
-                            w="36px"
-                            h="36px"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                            borderRadius="md"
-                            bg={color}
-                            color="white"
-                            fontSize="18px"
-                            flexShrink={0}
-                          >
-                            {icon}
-                          </Box>
-                        )}
-
-                        {/* Info */}
-                        <Flex direction="column" flex="1" minW={0}>
-                          <Text
-                            fontSize="sm"
-                            fontWeight="bold"
-                            whiteSpace="nowrap"
-                            textOverflow="ellipsis"
-                            overflow="hidden"
-                          >
-                            {file.name}
-                          </Text>
-                          <Text fontSize="xs" color="gray.500">
-                            {ext.toUpperCase()}
-                          </Text>
-                        </Flex>
-
-                        {/* Nếu đang upload → Spinner */}
-                        {file.uploading ? (
-                          <Spinner size="sm" color="blue.500" />
-                        ) : (
-                          <IconButton
-                            aria-label="Remove file"
-                            size="xs"
-                            variant="ghost"
-                            onClick={() => removeFile({ files, setFiles, index })}
-                          >
-                            ✕
-                          </IconButton>
-                        )}
-                      </Flex>
-                    );
-                  })}
-                </VStack>
-              )}
-
-              {/* Textarea */}
+              <FilePreview files={files} setFiles={setFiles} />
               <TextareaAutosize
                 minRows={1}
                 maxRows={5}
@@ -253,7 +180,7 @@ export function MiddleSection() {
         </Center>
 
         {/* Prompt buttons */}
-        {/* <PromptButtons onSummaryNews={() => handleSummaryNewsClick("vnexpress")} /> */}
+        <PromptButtons onSummaryNews={() => handleSummaryNewsClick("vnexpress")} />
       </VStack>
     </Center>
   );
