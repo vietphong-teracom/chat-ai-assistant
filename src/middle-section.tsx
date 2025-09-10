@@ -163,6 +163,7 @@ export function MiddleSection() {
                 </IconButton>
               </label>
             </Box>
+
             {/* Files Preview + textarea */}
             <VStack flex="1" align="stretch" gap={1}>
               <FilePreview files={files} setFiles={setFiles} />
