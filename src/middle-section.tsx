@@ -23,12 +23,7 @@ import { EnterIcon, UploadIcon } from "./icons/other-icons";
 import { uploadFile } from "./lib/upload-file";
 import { PromptButtons } from "./PromptButton";
 import { ChatMsg } from "./types";
-import {
-  FaMicrophone,
-  FaMicrophoneSlash,
-  FaVolumeMute,
-  FaVolumeUp,
-} from "react-icons/fa";
+import { FaVolumeMute, FaVolumeUp } from "react-icons/fa";
 
 export function MiddleSection() {
   const {
@@ -44,6 +39,8 @@ export function MiddleSection() {
     setError,
     abortRef,
     scrollRef,
+    isSoundOn,
+    setIsSound,
   } = useChatState();
 
   const { sendMessage, sendNewsSummary } = useChatStream({
@@ -56,6 +53,8 @@ export function MiddleSection() {
     streaming,
     setStreaming,
     abortRef,
+    isSoundOn,
+    setIsSound,
     setError,
   });
 
@@ -122,18 +121,8 @@ export function MiddleSection() {
     sendNewsSummary(nextMsgs, feedKey);
   };
 
-  const [isMicOn, setIsMicOn] = useState<boolean>(() => {
-    const saved = localStorage.getItem("isMicOn");
-    if (saved === "true") return true;
-    return false; // mặc định false nếu chưa lưu
-  });
-
-  useEffect(() => {
-    localStorage.setItem("isMicOn", String(isMicOn));
-  }, [isMicOn]);
-
   const toggleMic = () => {
-    setIsMicOn((prev) => !prev);
+    setIsSound((prev) => !prev);
   };
 
   return (
@@ -218,10 +207,10 @@ export function MiddleSection() {
               size="sm"
               borderRadius="full"
               onClick={toggleMic}
-              colorScheme={isMicOn ? "red" : "gray"}
+              colorScheme={isSoundOn ? "red" : "gray"}
               variant="outline"
             >
-              {isMicOn ? <FaVolumeUp /> : <FaVolumeMute />}
+              {isSoundOn ? <FaVolumeUp /> : <FaVolumeMute />}
             </IconButton>
 
             {/* Send */}

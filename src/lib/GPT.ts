@@ -158,7 +158,6 @@ export async function generateTTS(
   }
 
   const blob = await res.blob();
-  console.log("Blob type:", blob.type);
   const audioBlob = new Blob([blob], { type: "audio/mpeg" });
 
   const url = URL.createObjectURL(audioBlob);

@@ -14,6 +14,8 @@ interface UseChatStreamProps {
   setStreaming: React.Dispatch<React.SetStateAction<boolean>>;
   abortRef: React.MutableRefObject<AbortController | null>;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
+  isSoundOn: boolean;
+  setIsSound: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 /** Mặc định map nguồn sang RSS (mở rộng nếu cần) */
@@ -36,10 +38,9 @@ export function useChatStream({
   setStreaming,
   abortRef,
   setError,
+  isSoundOn,
 }: UseChatStreamProps) {
   const sendMessage = async () => {
-    const isMicOn = localStorage.getItem("isMicOn") === "true";
-
     if ((!inputValue.trim() && files.length === 0) || streaming) return;
 
     const newUserMessage: ChatMsg = {
@@ -55,6 +56,7 @@ export function useChatStream({
       })),
     };
 
+    // Thêm message của user và placeholder cho assistant
     setMsgs((prev) => [
       ...prev,
       newUserMessage,
@@ -73,49 +75,35 @@ export function useChatStream({
     try {
       let assistantText = "";
 
-      if (isMicOn && files.length === 0) {
-        const audioUrl = await generateTTS(
-          newUserMessage.content,
-          controller.signal
-        );
+      switch (true) {
+        /* ========== CASE 1: Có file + isSoundOn = true ========== */
+        case files.length > 0 && isSoundOn: {
+          console.log("CASE 1: Có file + bật âm thanh");
 
-        setMsgs((prev) => {
-          const copy = [...prev];
-          const last = copy[copy.length - 1];
-          if (last?.role === "assistant") {
-            const updated = { ...last, audioUrl };
-
-            copy[copy.length - 1] = updated;
-          }
-          return copy;
-        });
-      } else {
-        // Các trường hợp còn lại → call GPT streaming
-        const onDelta = (delta: string) => {
-          assistantText += delta;
-          setMsgs((prev) => {
-            const copy = [...prev];
-            const last = copy[copy.length - 1];
-            if (last?.role === "assistant") {
-              copy[copy.length - 1] = {
-                ...last,
-                content: last.content + delta,
-              };
+          // Bước 1: Gọi GPT để xử lý file
+          await handleGPTStreaming(
+            newUserMessage,
+            files,
+            controller,
+            (delta) => {
+              assistantText += delta;
             }
-            return copy;
-          });
-        };
+          );
 
-        await askGPT(
-          [...msgs, newUserMessage],
-          onDelta,
-          files,
-          controller.signal
-        );
+          // Bước 2: Sau khi GPT trả kết quả → tạo TTS từ câu trả lời GPT
+          await appendTTSResult(assistantText, controller);
+          break;
+        }
 
-        if (isMicOn) {
-          // Sau khi GPT xong → tạo TTS từ kết quả
-          const audioUrl = await generateTTS(assistantText, controller.signal);
+        /* ========== CASE 2: Không có file + isSoundOn = true ========== */
+        case files.length === 0 && isSoundOn: {
+          console.log("CASE 2: Không có file + bật âm thanh");
+
+          // Gọi TTS trực tiếp từ input của người dùng
+          const audioUrl = await generateTTS(
+            newUserMessage.content,
+            controller.signal
+          );
 
           setMsgs((prev) => {
             const copy = [...prev];
@@ -125,6 +113,36 @@ export function useChatStream({
             }
             return copy;
           });
+          break;
+        }
+
+        /* ========== CASE 3: isSoundOn = false (xử lý GPT bình thường) ========== */
+        case !isSoundOn: {
+          console.log("CASE 3: Âm thanh tắt → GPT streaming bình thường");
+
+          await handleGPTStreaming(
+            newUserMessage,
+            files,
+            controller,
+            (delta) => {
+              assistantText += delta;
+            }
+          );
+          break;
+        }
+
+        /* ========== CASE DEFAULT: An toàn, fallback ========== */
+        default: {
+          console.warn("Default case: không rơi vào logic nào, fallback GPT");
+          await handleGPTStreaming(
+            newUserMessage,
+            files,
+            controller,
+            (delta) => {
+              assistantText += delta;
+            }
+          );
+          break;
         }
       }
     } catch (err: any) {
@@ -134,6 +152,49 @@ export function useChatStream({
       setStreaming(false);
       abortRef.current = null;
     }
+  };
+
+  /* ======================= Helper Functions ======================= */
+
+  // Hàm xử lý GPT streaming
+  const handleGPTStreaming = async (
+    userMsg: ChatMsg,
+    files: UploadedFile[],
+    controller: AbortController,
+    onDelta: (delta: string) => void
+  ) => {
+    await askGPT(
+      [...msgs, userMsg],
+      (delta) => {
+        onDelta(delta);
+        setMsgs((prev) => {
+          const copy = [...prev];
+          const last = copy[copy.length - 1];
+          if (last?.role === "assistant") {
+            copy[copy.length - 1] = {
+              ...last,
+              content: last.content + delta,
+            };
+          }
+          return copy;
+        });
+      },
+      files,
+      controller.signal
+    );
+  };
+
+  // Hàm tạo TTS và append vào message cuối
+  const appendTTSResult = async (text: string, controller: AbortController) => {
+    const audioUrl = await generateTTS(text, controller.signal);
+    setMsgs((prev) => {
+      const copy = [...prev];
+      const last = copy[copy.length - 1];
+      if (last?.role === "assistant") {
+        copy[copy.length - 1] = { ...last, audioUrl };
+      }
+      return copy;
+    });
   };
 
   async function sendNewsSummary(

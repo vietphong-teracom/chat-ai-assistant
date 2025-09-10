@@ -4,12 +4,16 @@ import type { ChatMsg, UploadedFile } from "@/types";
 
 export function useChatState() {
   const [msgs, setMsgs] = useState<ChatMsg[]>([
-    { role: "system", content: "Bạn là trợ lý hữu ích, trả lời ngắn gọn, rõ ràng." },
+    {
+      role: "system",
+      content: "Bạn là trợ lý hữu ích, trả lời ngắn gọn, rõ ràng.",
+    },
   ]);
   const [streaming, setStreaming] = useState(false);
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isSoundOn, setIsSound] = useState<boolean>(false);
 
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -32,5 +36,7 @@ export function useChatState() {
     setError,
     abortRef,
     scrollRef,
+    setIsSound,
+    isSoundOn,
   };
 }
