@@ -9,7 +9,6 @@ type MessageProps = {
   index: number;
   streaming: boolean;
 };
-
 export const Message = ({ msg, index, streaming }: MessageProps) => {
   return (
     <Box
@@ -24,14 +23,24 @@ export const Message = ({ msg, index, streaming }: MessageProps) => {
       lineHeight="1.6"
       boxShadow="sm"
     >
-      {msg.content ? (
-        <MarkdownMessage content={msg.content} />
-      ) : msg.role === "assistant" && streaming ? (
-        <ThinkingMessage />
-      ) : null}
+      {/* Nếu có audioUrl thì chỉ hiện audio */}
+      {msg.audioUrl ? (
+        <Box mt={2}>
+          <audio controls src={msg.audioUrl} />
+        </Box>
+      ) : (
+        <>
+          {/* Text content */}
+          {msg.content ? (
+            <MarkdownMessage content={msg.content} />
+          ) : msg.role === "assistant" && streaming ? (
+            <ThinkingMessage />
+          ) : null}
 
-      {/* Files đính kèm trong message */}
-      {msg.files && <FileMessages files={msg.files} />}
+          {/* Files đính kèm */}
+          {msg.files && <FileMessages files={msg.files} />}
+        </>
+      )}
     </Box>
   );
 };

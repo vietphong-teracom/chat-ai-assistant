@@ -3,6 +3,7 @@ export type Role = "user" | "assistant" | "system";
 export type ChatMsg = {
   role: Role;
   content: string;
+  audioUrl?: string;
   files?: UploadedFile[]; // Thêm thuộc tính files tùy chọn
 };
 
@@ -15,7 +16,9 @@ export interface UploadedFile {
   uploading: boolean; // trạng thái đang upload
 }
 
-export type InputContent = { type: "input_text"; text: string } | { type: "input_file"; file_id: string };
+export type InputContent =
+  | { type: "input_text"; text: string }
+  | { type: "input_file"; file_id: string };
 
 export type InputMessage = {
   role: "user" | "system";

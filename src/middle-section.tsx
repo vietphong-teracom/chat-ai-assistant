@@ -1,5 +1,19 @@
-import { Box, Center, Flex, Heading, IconButton, Spinner, Text, VStack } from "@chakra-ui/react";
-import type { KeyboardEvent, SetStateAction } from "react";
+import {
+  Box,
+  Center,
+  Flex,
+  Heading,
+  IconButton,
+  Spinner,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
+import React, {
+  useEffect,
+  useState,
+  type KeyboardEvent,
+  type SetStateAction,
+} from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import "../src/lib/index.css";
 import { ErrorMessage } from "./ErrorMessage";
@@ -26,6 +40,25 @@ export function MiddleSection() {
     abortRef,
     scrollRef,
   } = useChatState();
+
+  const [ttsEnabled, setTtsEnabled] = useState(false);
+
+  // 1️⃣ Khi component mount, load từ localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem("ttsEnabled");
+    if (saved !== null) {
+      setTtsEnabled(saved === "true");
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("ttsEnabled", ttsEnabled.toString());
+  }, [ttsEnabled]);
+
+  // 3️⃣ Toggle khi bấm nút
+  const handleToggleTts = () => {
+    setTtsEnabled((prev) => !prev);
+  };
 
   const { sendMessage } = useChatStream({
     msgs,
@@ -75,7 +108,11 @@ export function MiddleSection() {
       const data = await uploadFile({ formData, setFiles, previewUrl });
 
       setFiles((prev) =>
-        prev.map((f) => (f.previewUrl === previewUrl ? { ...f, fileId: data.id, uploading: false } : f))
+        prev.map((f) =>
+          f.previewUrl === previewUrl
+            ? { ...f, fileId: data.id, uploading: false }
+            : f
+        )
       );
     }
 
@@ -118,7 +155,13 @@ export function MiddleSection() {
           >
             {/* Upload */}
             <Box w="40px" flexShrink={0}>
-              <input type="file" id="file-input" style={{ display: "none" }} multiple onChange={handleSelect} />
+              <input
+                type="file"
+                id="file-input"
+                style={{ display: "none" }}
+                multiple
+                onChange={handleSelect}
+              />
               <label htmlFor="file-input">
                 <IconButton
                   aria-label="Upload file"
@@ -133,6 +176,17 @@ export function MiddleSection() {
                 </IconButton>
               </label>
             </Box>
+            {/* TTS button */}
+            <IconButton
+              aria-label="Text to Speech"
+              size="sm"
+              borderRadius="full"
+              onClick={handleToggleTts}
+              variant={ttsEnabled ? "solid" : "ghost"}
+              colorScheme={ttsEnabled ? "green" : "gray"}
+            >
+              🎤
+            </IconButton>
 
             {/* Files + textarea */}
             <VStack flex="1" align="stretch" gap={1}>
@@ -207,7 +261,9 @@ export function MiddleSection() {
                             aria-label="Remove file"
                             size="xs"
                             variant="ghost"
-                            onClick={() => removeFile({ files, setFiles, index })}
+                            onClick={() =>
+                              removeFile({ files, setFiles, index })
+                            }
                           >
                             ✕
                           </IconButton>
@@ -224,7 +280,9 @@ export function MiddleSection() {
                 maxRows={5}
                 placeholder="Input message here"
                 value={inputValue}
-                onChange={(e: { target: { value: SetStateAction<string> } }) => setInputValue(e.target.value)}
+                onChange={(e: { target: { value: SetStateAction<string> } }) =>
+                  setInputValue(e.target.value)
+                }
                 onKeyDown={handleKeyDown}
                 style={{
                   width: "100%",
@@ -243,7 +301,9 @@ export function MiddleSection() {
               aria-label="Send message"
               size="sm"
               borderRadius="full"
-              disabled={(inputValue.trim() === "" && files.length === 0) || streaming}
+              disabled={
+                (inputValue.trim() === "" && files.length === 0) || streaming
+              }
               onClick={sendMessage}
               variant="solid"
             >
