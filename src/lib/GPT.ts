@@ -1,7 +1,7 @@
 import { ChatMsg, InputContent, UploadedFile } from "@/types";
 
 const API_KEY = import.meta.env.VITE_OPENAI_API_KEY as string;
-const API_URL = import.meta.env.VITE_OPENAI_API_URL as string;
+export const API_URL = import.meta.env.VITE_OPENAI_API_URL as string;
 
 if (!API_KEY) {
   throw new Error("Missing VITE_OPENAI_API_KEY in environment variables");
@@ -162,10 +162,5 @@ export async function generateTTS(
   const audioBlob = new Blob([blob], { type: "audio/mpeg" });
 
   const url = URL.createObjectURL(audioBlob);
-  playAudioFromUrl(url);
   return url;
-}
-function playAudioFromUrl(url: string) {
-  const audio = new Audio(url);
-  audio.play().catch((err) => console.error("Failed to play audio:", err));
 }

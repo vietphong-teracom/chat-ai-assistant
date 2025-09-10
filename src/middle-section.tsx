@@ -23,7 +23,12 @@ import { EnterIcon, UploadIcon } from "./icons/other-icons";
 import { uploadFile } from "./lib/upload-file";
 import { PromptButtons } from "./PromptButton";
 import { ChatMsg } from "./types";
-import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
+import {
+  FaMicrophone,
+  FaMicrophoneSlash,
+  FaVolumeMute,
+  FaVolumeUp,
+} from "react-icons/fa";
 
 export function MiddleSection() {
   const {
@@ -119,7 +124,8 @@ export function MiddleSection() {
 
   const [isMicOn, setIsMicOn] = useState<boolean>(() => {
     const saved = localStorage.getItem("isMicOn");
-    return saved === "false";
+    if (saved === "true") return true;
+    return false; // mặc định false nếu chưa lưu
   });
 
   useEffect(() => {
@@ -215,7 +221,7 @@ export function MiddleSection() {
               colorScheme={isMicOn ? "red" : "gray"}
               variant="outline"
             >
-              {isMicOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
+              {isMicOn ? <FaVolumeUp /> : <FaVolumeMute />}
             </IconButton>
 
             {/* Send */}
