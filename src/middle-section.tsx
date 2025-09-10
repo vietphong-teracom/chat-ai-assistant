@@ -1,5 +1,17 @@
-import { Box, Center, Flex, Heading, IconButton, VStack } from "@chakra-ui/react";
-import type { KeyboardEvent, SetStateAction } from "react";
+import {
+  Box,
+  Center,
+  Flex,
+  Heading,
+  IconButton,
+  VStack,
+} from "@chakra-ui/react";
+import {
+  useEffect,
+  useState,
+  type KeyboardEvent,
+  type SetStateAction,
+} from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import "../src/lib/index.css";
 import { Conversation } from "./Conversation";
@@ -11,6 +23,7 @@ import { EnterIcon, UploadIcon } from "./icons/other-icons";
 import { uploadFile } from "./lib/upload-file";
 import { PromptButtons } from "./PromptButton";
 import { ChatMsg } from "./types";
+import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
 
 export function MiddleSection() {
   const {
@@ -76,7 +89,11 @@ export function MiddleSection() {
       const data = await uploadFile({ formData, setFiles, previewUrl });
 
       setFiles((prev) =>
-        prev.map((f) => (f.previewUrl === previewUrl ? { ...f, fileId: data.id, uploading: false } : f))
+        prev.map((f) =>
+          f.previewUrl === previewUrl
+            ? { ...f, fileId: data.id, uploading: false }
+            : f
+        )
       );
     }
 
@@ -100,6 +117,19 @@ export function MiddleSection() {
     sendNewsSummary(nextMsgs, feedKey);
   };
 
+  const [isMicOn, setIsMicOn] = useState<boolean>(() => {
+    const saved = localStorage.getItem("isMicOn");
+    return saved === "false";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("isMicOn", String(isMicOn));
+  }, [isMicOn]);
+
+  const toggleMic = () => {
+    setIsMicOn((prev) => !prev);
+  };
+
   return (
     <Center flex="1" bg="#9ca3af38">
       <VStack gap="6" w="100%">
@@ -110,7 +140,11 @@ export function MiddleSection() {
 
         {/* Conversation */}
         <Center w="100%">
-          <Conversation msgs={msgs} streaming={streaming} scrollRef={scrollRef} />
+          <Conversation
+            msgs={msgs}
+            streaming={streaming}
+            scrollRef={scrollRef}
+          />
         </Center>
 
         {/* Input */}
@@ -127,7 +161,13 @@ export function MiddleSection() {
           >
             {/* Upload */}
             <Box w="40px" flexShrink={0}>
-              <input type="file" id="file-input" style={{ display: "none" }} multiple onChange={handleSelect} />
+              <input
+                type="file"
+                id="file-input"
+                style={{ display: "none" }}
+                multiple
+                onChange={handleSelect}
+              />
               <label htmlFor="file-input">
                 <IconButton
                   aria-label="Upload file"
@@ -151,7 +191,9 @@ export function MiddleSection() {
                 maxRows={5}
                 placeholder="Input message here"
                 value={inputValue}
-                onChange={(e: { target: { value: SetStateAction<string> } }) => setInputValue(e.target.value)}
+                onChange={(e: { target: { value: SetStateAction<string> } }) =>
+                  setInputValue(e.target.value)
+                }
                 onKeyDown={handleKeyDown}
                 style={{
                   width: "100%",
@@ -165,12 +207,25 @@ export function MiddleSection() {
               />
             </VStack>
 
+            <IconButton
+              aria-label="Toggle Microphone"
+              size="sm"
+              borderRadius="full"
+              onClick={toggleMic}
+              colorScheme={isMicOn ? "red" : "gray"}
+              variant="outline"
+            >
+              {isMicOn ? <FaMicrophone /> : <FaMicrophoneSlash />}
+            </IconButton>
+
             {/* Send */}
             <IconButton
               aria-label="Send message"
               size="sm"
               borderRadius="full"
-              disabled={(inputValue.trim() === "" && files.length === 0) || streaming}
+              disabled={
+                (inputValue.trim() === "" && files.length === 0) || streaming
+              }
               onClick={sendMessage}
               variant="solid"
             >
@@ -180,7 +235,9 @@ export function MiddleSection() {
         </Center>
 
         {/* Prompt buttons */}
-        <PromptButtons onSummaryNews={() => handleSummaryNewsClick("vnexpress")} />
+        <PromptButtons
+          onSummaryNews={() => handleSummaryNewsClick("vnexpress")}
+        />
       </VStack>
     </Center>
   );

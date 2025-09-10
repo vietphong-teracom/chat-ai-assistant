@@ -17,7 +17,9 @@ function buildInput(messages: ChatMsg[], files: UploadedFile[]) {
   return messages
     .filter((m) => m.role === "user" || m.role === "system")
     .map((msg) => {
-      const content: InputContent[] = [{ type: "input_text", text: msg.content }];
+      const content: InputContent[] = [
+        { type: "input_text", text: msg.content },
+      ];
 
       // Nếu là user và có file, append file_id
       if (msg.role === "user" && files.length > 0) {
@@ -38,7 +40,10 @@ function buildInput(messages: ChatMsg[], files: UploadedFile[]) {
 /**
  * Gửi request lên API
  */
-async function fetchChatResponse(body: object, signal?: AbortSignal): Promise<Response> {
+async function fetchChatResponse(
+  body: object,
+  signal?: AbortSignal
+): Promise<Response> {
   const res = await fetch(`${API_URL}/responses`, {
     method: "POST",
     headers: {
@@ -120,4 +125,47 @@ export async function askGPT(
   const res = await fetchChatResponse(body, signal);
 
   await handleStream(res, onDelta);
+}
+export async function generateTTS(
+  text: string,
+  signal?: AbortSignal
+): Promise<string> {
+  const body = {
+    model: "gpt-4o-mini-tts",
+    voice: "alloy",
+    input: text,
+  };
+
+  const res = await fetch(`${API_URL}/audio/speech`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    signal,
+  });
+
+  if (!res.ok) {
+    let errMsg = `Request failed: ${res.status}`;
+    try {
+      const errJson = await res.json();
+      errMsg = errJson.error?.message || JSON.stringify(errJson);
+    } catch {
+      errMsg = await res.text();
+    }
+    throw new Error(`OpenAI TTS error: ${errMsg}`);
+  }
+
+  const blob = await res.blob();
+  console.log("Blob type:", blob.type);
+  const audioBlob = new Blob([blob], { type: "audio/mpeg" });
+
+  const url = URL.createObjectURL(audioBlob);
+  playAudioFromUrl(url);
+  return url;
+}
+function playAudioFromUrl(url: string) {
+  const audio = new Audio(url);
+  audio.play().catch((err) => console.error("Failed to play audio:", err));
 }

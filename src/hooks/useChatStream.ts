@@ -1,7 +1,8 @@
 // src/hooks/useChatStream.ts
 import type { ChatMsg, UploadedFile } from "@/types";
-import { askGPT } from "@/lib/GPT";
+import { askGPT, generateTTS } from "@/lib/GPT";
 import { fetchTopArticlesText } from "@/lib/fetchRss";
+import { useEffect } from "react";
 
 interface UseChatStreamProps {
   msgs: ChatMsg[];
@@ -38,6 +39,8 @@ export function useChatStream({
   setError,
 }: UseChatStreamProps) {
   const sendMessage = async () => {
+    const isMicOn = localStorage.getItem("isMicOn") === "true";
+
     if ((!inputValue.trim() && files.length === 0) || streaming) return;
 
     const newUserMessage: ChatMsg = {
@@ -53,37 +56,80 @@ export function useChatStream({
       })),
     };
 
-    const nextMsgs = [...msgs, newUserMessage];
-    setMsgs(nextMsgs);
+    setMsgs((prev) => [
+      ...prev,
+      newUserMessage,
+      { role: "assistant", content: "" }, // placeholder assistant
+    ]);
 
-    // Reset input + file list
+    // Reset input + files
     setInputValue("");
     setFiles([]);
     setStreaming(true);
     setError(null);
 
-    // Tạo AbortController
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // Thêm message rỗng của assistant để append stream
-    setMsgs((prev) => [...prev, { role: "assistant", content: "" }]);
-
-    const onDelta = (delta: string) => {
-      setMsgs((prev) => {
-        const copy = [...prev];
-        const last = copy[copy.length - 1];
-        if (last?.role === "assistant") {
-          copy[copy.length - 1] = { ...last, content: last.content + delta };
-        }
-        return copy;
-      });
-    };
-
     try {
-      await askGPT(nextMsgs, onDelta, files, controller.signal);
+      let assistantText = "";
+
+      if (isMicOn && files.length === 0) {
+        const audioUrl = await generateTTS(
+          newUserMessage.content,
+          controller.signal
+        );
+
+        setMsgs((prev) => {
+          const copy = [...prev];
+          const last = copy[copy.length - 1];
+          if (last?.role === "assistant") {
+            const updated = { ...last, audioUrl };
+
+            copy[copy.length - 1] = updated;
+          }
+          return copy;
+        });
+      } else {
+        // Các trường hợp còn lại → call GPT streaming
+        const onDelta = (delta: string) => {
+          assistantText += delta;
+          setMsgs((prev) => {
+            const copy = [...prev];
+            const last = copy[copy.length - 1];
+            if (last?.role === "assistant") {
+              copy[copy.length - 1] = {
+                ...last,
+                content: last.content + delta,
+              };
+            }
+            return copy;
+          });
+        };
+
+        await askGPT(
+          [...msgs, newUserMessage],
+          onDelta,
+          files,
+          controller.signal
+        );
+
+        if (isMicOn) {
+          // Sau khi GPT xong → tạo TTS từ kết quả
+          const audioUrl = await generateTTS(assistantText, controller.signal);
+
+          setMsgs((prev) => {
+            const copy = [...prev];
+            const last = copy[copy.length - 1];
+            if (last?.role === "assistant") {
+              copy[copy.length - 1] = { ...last, audioUrl };
+            }
+            return copy;
+          });
+        }
+      }
     } catch (err: any) {
-      console.error("Chat stream error:", err);
+      console.error("Chat error:", err);
       setError(err.message || "Có lỗi xảy ra, vui lòng thử lại.");
     } finally {
       setStreaming(false);
@@ -91,7 +137,10 @@ export function useChatStream({
     }
   };
 
-  async function sendNewsSummary(providedMsgs: ChatMsg[], feedKey = "vnexpress") {
+  async function sendNewsSummary(
+    providedMsgs: ChatMsg[],
+    feedKey = "vnexpress"
+  ) {
     if (streaming) return;
     setError(null);
 
@@ -109,17 +158,27 @@ export function useChatStream({
     setStreaming(true);
 
     // Add a temporary assistant message to show progress
-    setMsgs((prev) => [...prev, { role: "assistant", content: "Đang lấy tin từ nguồn..." }]);
+    setMsgs((prev) => [
+      ...prev,
+      { role: "assistant", content: "Đang lấy tin từ nguồn..." },
+    ]);
 
     try {
       // 1) fetch feed as text (top N articles)
-      const feedText = await fetchTopArticlesText(feedUrl, 5, controller.signal);
+      const feedText = await fetchTopArticlesText(
+        feedUrl,
+        5,
+        controller.signal
+      );
 
       // 2) construct final user content (we do NOT show the full feedText in UI to keep it clean)
       const finalUserContent = `Nguồn: ${feedUrl}\n\n${feedText}\n\nYêu cầu: ${lastMsg.content}`;
 
       // 3) prepare messages for API: replace last user message with enriched content
-      const msgsForApi: ChatMsg[] = [...providedMsgs.slice(0, -1), { ...lastMsg, content: finalUserContent }];
+      const msgsForApi: ChatMsg[] = [
+        ...providedMsgs.slice(0, -1),
+        { ...lastMsg, content: finalUserContent },
+      ];
 
       // remove temporary assistant progress message we just appended
       setMsgs((prev) => prev.slice(0, Math.max(0, prev.length - 1)));
@@ -133,7 +192,10 @@ export function useChatStream({
           const copy = [...prev];
           const last = copy[copy.length - 1];
           if (last?.role === "assistant") {
-            copy[copy.length - 1] = { ...last, content: (last.content || "") + delta };
+            copy[copy.length - 1] = {
+              ...last,
+              content: (last.content || "") + delta,
+            };
           }
           return copy;
         });
