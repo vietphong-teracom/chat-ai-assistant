@@ -18,7 +18,7 @@ export const Message = ({ msg, index, streaming }: MessageProps) => {
       px={4}
       py={3}
       borderRadius="xl"
-      bg={msg.role === "user" ? "#f6e9e1" : "#ffffff"}
+      bg={msg.role === "user" ? "#f7f6f1" : "#ffffff"}
       color={"#111111"}
       fontSize="15px"
       lineHeight="1.6"
@@ -29,8 +29,6 @@ export const Message = ({ msg, index, streaming }: MessageProps) => {
       ) : msg.role === "assistant" && streaming ? (
         <ThinkingMessage />
       ) : null}
-
-      {/* Files đính kèm trong message */}
       {msg.files && <FileMessages files={msg.files} />}
     </Box>
   );

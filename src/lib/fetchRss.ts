@@ -1,8 +1,16 @@
-// src/services/rssService.ts
-export interface RssArticle {
+// src/lib/fetchRss.ts
+export interface RssJsonItem {
   title: string;
-  description: string;
   link: string;
+  description: string;
+  pubDate?: string;
+  content?: string;
+}
+
+export interface Rss2JsonResponse {
+  status: "ok" | string;
+  feed?: any;
+  items: RssJsonItem[];
 }
 
 function stripHtml(html: string) {
@@ -12,54 +20,44 @@ function stripHtml(html: string) {
     .trim();
 }
 
-/**
- * Fetch RSS and return joined text (1..limit items).
- * Throw nếu fetch bị lỗi hoặc không tìm thấy item.
- */
-export async function fetchRssAsText(feedUrl: string, limit = 5, signal?: AbortSignal): Promise<string> {
-  const res = await fetch(feedUrl, { signal });
-  if (!res.ok) {
-    throw new Error(`Failed to fetch RSS (${res.status})`);
-  }
-
-  const xmlText = await res.text();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(xmlText, "application/xml");
-
-  const items = Array.from(doc.querySelectorAll("item")).slice(0, limit);
-  if (items.length === 0) {
-    throw new Error("No items found in RSS feed");
-  }
-
-  const articles: RssArticle[] = items.map((item) => {
-    const title = item.querySelector("title")?.textContent?.trim() ?? "";
-    const descrNode = item.querySelector("description") || item.querySelector("content\\:encoded");
-    const description = stripHtml(descrNode?.textContent?.trim() ?? "");
-    const link = item.querySelector("link")?.textContent?.trim() ?? "";
-    return { title, description, link };
-  });
-
-  const text = articles.map((a, i) => `${i + 1}. ${a.title}\n${a.description}\nLink: ${a.link}`).join("\n\n");
-
-  return text;
+function truncate(text: string, max = 400) {
+  if (!text) return "";
+  return text.length > max ? text.slice(0, max).trim() + "…" : text;
 }
 
-// src/lib/fetchRss.ts
+/**
+ * Fetch RSS via rss2json.com and return parsed JSON.
+ * Throws on network / parse error.
+ */
+export async function fetchRssAsJson(rssUrl: string, signal?: AbortSignal): Promise<Rss2JsonResponse> {
+  const api = "https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(rssUrl);
 
-export async function fetchRssAsJson(url: string) {
-  const api = "https://api.rss2json.com/v1/api.json?rss_url=";
-
-  try {
-    const response = await fetch(api + encodeURIComponent(url));
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch RSS: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data; // data.items chứa danh sách tin tức
-  } catch (error) {
-    console.error("fetchRssAsJson error:", error);
-    throw error;
+  const res = await fetch(api, { signal });
+  if (!res.ok) {
+    throw new Error(`RSS->JSON fetch failed (${res.status})`);
   }
+  const data = (await res.json()) as Rss2JsonResponse;
+  if (!data || !Array.isArray(data.items)) {
+    throw new Error("Invalid RSS->JSON response");
+  }
+  return data;
+}
+
+/**
+ * Return a joined text containing top `limit` articles,
+ * each: "1. Title\nshort description\nLink: ..."
+ */
+export async function fetchTopArticlesText(rssUrl: string, limit = 10, signal?: AbortSignal) {
+  const json = await fetchRssAsJson(rssUrl, signal);
+  const items = (json.items || []).slice(0, limit);
+
+  if (items.length === 0) throw new Error("No items in RSS feed");
+
+  const parts = items.map((it, i) => {
+    const desc = stripHtml(it.description || it.content || "");
+    const short = truncate(desc, 600);
+    return `${i + 1}. ${it.title}\n${short}\nLink: ${it.link}`;
+  });
+
+  return parts.join("\n\n");
 }

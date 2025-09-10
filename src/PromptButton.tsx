@@ -2,7 +2,7 @@
 import { Box, HStack } from "@chakra-ui/react";
 import "../src/lib/index.css";
 import { Button } from "./components/ui/button";
-import { BirthdayIcon, ChartIcon, CodeIcon, IllustrationIcon } from "./icons/other-icons";
+import { IllustrationIcon } from "./icons/other-icons";
 
 interface PromptButtonProps {
   icon?: React.ReactElement;
@@ -12,7 +12,7 @@ interface PromptButtonProps {
 
 function PromptButton({ icon, description, onClick }: PromptButtonProps) {
   return (
-    <Button variant="outline" borderRadius="full" onClick={onClick}>
+    <Button variant="outline" borderRadius="full" onClick={onClick} bg={"#f8f5f4"}>
       {icon}
       <Box ml={2}>{description}</Box>
     </Button>
@@ -21,16 +21,16 @@ function PromptButton({ icon, description, onClick }: PromptButtonProps) {
 
 export function PromptButtons({ onSummaryNews }: { onSummaryNews?: () => void }) {
   return (
-    <HStack gap="2">
+    <HStack gap="2" mb={6}>
       <PromptButton
         icon={<IllustrationIcon color="green.500" fontSize="lg" />}
         description="Summary News"
         onClick={onSummaryNews}
       />
-      <PromptButton icon={<CodeIcon color="blue.500" fontSize="lg" />} description="Code" />
+      {/* <PromptButton icon={<CodeIcon color="blue.500" fontSize="lg" />} description="Code" />
       <PromptButton icon={<ChartIcon color="cyan.400" fontSize="lg" />} description="Analyze data" />
       <PromptButton icon={<BirthdayIcon color="cyan.400" fontSize="lg" />} description="Surprise" />
-      <PromptButton description="More" />
+      <PromptButton description="More" /> */}
     </HStack>
   );
 }
