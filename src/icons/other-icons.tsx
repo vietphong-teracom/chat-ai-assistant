@@ -418,3 +418,14 @@ export const DefaultFileIcon = () => (
     ></text>
   </svg>
 );
+export const BellIcon = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+    <path
+      d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 00-4-5.7V4a2 2 0 10-4 0v1.3A6 6 0 006 11v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0v1a3 3 0 11-6 0v-1"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);

@@ -1,15 +1,30 @@
-import { Box, Center, Flex, Heading, IconButton, Spinner, Text, VStack } from "@chakra-ui/react";
-import type { KeyboardEvent, SetStateAction } from "react";
+import {
+  Box,
+  Center,
+  Flex,
+  Heading,
+  IconButton,
+  Spinner,
+  Text,
+  VStack,
+} from "@chakra-ui/react";
+import {
+  useEffect,
+  useState,
+  type KeyboardEvent,
+  type SetStateAction,
+} from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import "../src/lib/index.css";
 import { ErrorMessage } from "./ErrorMessage";
 import { getFileMeta } from "./helper";
 import { useChatState } from "./hooks/useChatState";
 import { useChatStream } from "./hooks/useChatStream";
-import { EnterIcon, UploadIcon } from "./icons/other-icons";
+import { BellIcon, EnterIcon, UploadIcon } from "./icons/other-icons";
 import { removeFile } from "./lib/remove-file-uploaded";
 import { uploadFile } from "./lib/upload-file";
 import { Message } from "./Message";
+import { Tooltip } from "./components/ui/tooltip";
 
 export function MiddleSection() {
   const {
@@ -40,6 +55,23 @@ export function MiddleSection() {
     setError,
   });
 
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("reminderEnabled");
+    if (stored === "true") setReminderEnabled(true);
+  }, []);
+
+  // 3. Handler khi nhấn nút Reminder
+  const handleReminderClick = () => {
+    setReminderEnabled((prev) => {
+      const newState = !prev; // toggle true/false
+      localStorage.setItem("reminderEnabled", newState ? "true" : "false");
+      console.log("Auto reminder:", newState ? "enabled" : "disabled");
+      return newState;
+    });
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -63,11 +95,11 @@ export function MiddleSection() {
           size: file.size,
           type: file.type,
           previewUrl,
-          uploading: true, // đang upload
+          uploading: true,
         },
       ]);
 
-      // 2. Bắt đầu upload lên server
+      // 2. Upload lên server
       const formData = new FormData();
       formData.append("file", file);
       formData.append("purpose", "assistants");
@@ -75,24 +107,24 @@ export function MiddleSection() {
       const data = await uploadFile({ formData, setFiles, previewUrl });
 
       setFiles((prev) =>
-        prev.map((f) => (f.previewUrl === previewUrl ? { ...f, fileId: data.id, uploading: false } : f))
+        prev.map((f) =>
+          f.previewUrl === previewUrl
+            ? { ...f, fileId: data.id, uploading: false }
+            : f
+        )
       );
     }
 
     e.target.value = "";
   };
 
-  // Handler khi bấm nút Summary News
-
   return (
     <Center flex="1" bg="#9ca3af38">
       <VStack gap="6" w="100%">
         <Heading size="3xl">What can I help with?</Heading>
 
-        {/* Error message */}
         {error && <ErrorMessage error={error} />}
 
-        {/* Conversation */}
         <Center w="100%">
           <VStack gap={4} align="stretch" maxW="768px" w="100%">
             {msgs
@@ -104,7 +136,6 @@ export function MiddleSection() {
           </VStack>
         </Center>
 
-        {/* Input */}
         <Center w="100%">
           <Flex
             maxW="768px"
@@ -116,23 +147,52 @@ export function MiddleSection() {
             gap={2}
             bg="white"
           >
-            {/* Upload */}
-            <Box w="40px" flexShrink={0}>
-              <input type="file" id="file-input" style={{ display: "none" }} multiple onChange={handleSelect} />
-              <label htmlFor="file-input">
-                <IconButton
-                  aria-label="Upload file"
-                  size="sm"
-                  borderRadius="full"
-                  variant="ghost"
-                  as="span"
-                  w="100%"
-                  h="100%"
-                >
-                  <UploadIcon fontSize="2xl" />
-                </IconButton>
-              </label>
-            </Box>
+            {/* Upload + Reminder */}
+            <Flex gap={2}>
+              {/* Upload file */}
+              <Box w="40px" flexShrink={0}>
+                <input
+                  type="file"
+                  id="file-input"
+                  style={{ display: "none" }}
+                  multiple
+                  onChange={handleSelect}
+                />
+                <label htmlFor="file-input">
+                  <Tooltip content="Upload file" showArrow portalled>
+                    <IconButton
+                      aria-label="Upload file"
+                      size="sm"
+                      borderRadius="full"
+                      variant="ghost"
+                      as="span"
+                      w="100%"
+                      h="100%"
+                    >
+                      <UploadIcon fontSize="2xl" />
+                    </IconButton>
+                  </Tooltip>
+                </label>
+              </Box>
+
+              {/* Reminder */}
+              <Box w="40px" flexShrink={0}>
+                <Tooltip content="Tạo nhắc nhở tự động" showArrow portalled>
+                  <IconButton
+                    aria-label="Reminder"
+                    size="sm"
+                    borderRadius="full"
+                    w="100%"
+                    h="100%"
+                    variant={reminderEnabled ? "solid" : "ghost"} // đổi style khi
+                    colorScheme={reminderEnabled ? "green" : undefined} // highlight khi bật
+                    onClick={handleReminderClick}
+                  >
+                    <BellIcon />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            </Flex>
 
             {/* Files + textarea */}
             <VStack flex="1" align="stretch" gap={1}>
@@ -154,7 +214,6 @@ export function MiddleSection() {
                         gap={3}
                         w="fit-content"
                       >
-                        {/* Nếu là ảnh → preview thumbnail */}
                         {file.type.startsWith("image/") ? (
                           <img
                             src={file.previewUrl || ""}
@@ -183,7 +242,6 @@ export function MiddleSection() {
                           </Box>
                         )}
 
-                        {/* Info */}
                         <Flex direction="column" flex="1" minW={0}>
                           <Text
                             fontSize="sm"
@@ -199,7 +257,6 @@ export function MiddleSection() {
                           </Text>
                         </Flex>
 
-                        {/* Nếu đang upload → Spinner */}
                         {file.uploading ? (
                           <Spinner size="sm" color="blue.500" />
                         ) : (
@@ -207,7 +264,9 @@ export function MiddleSection() {
                             aria-label="Remove file"
                             size="xs"
                             variant="ghost"
-                            onClick={() => removeFile({ files, setFiles, index })}
+                            onClick={() =>
+                              removeFile({ files, setFiles, index })
+                            }
                           >
                             ✕
                           </IconButton>
@@ -218,13 +277,14 @@ export function MiddleSection() {
                 </VStack>
               )}
 
-              {/* Textarea */}
               <TextareaAutosize
                 minRows={1}
                 maxRows={5}
                 placeholder="Message ChatGPT"
                 value={inputValue}
-                onChange={(e: { target: { value: SetStateAction<string> } }) => setInputValue(e.target.value)}
+                onChange={(e: { target: { value: SetStateAction<string> } }) =>
+                  setInputValue(e.target.value)
+                }
                 onKeyDown={handleKeyDown}
                 style={{
                   width: "100%",
@@ -243,7 +303,9 @@ export function MiddleSection() {
               aria-label="Send message"
               size="sm"
               borderRadius="full"
-              disabled={(inputValue.trim() === "" && files.length === 0) || streaming}
+              disabled={
+                (inputValue.trim() === "" && files.length === 0) || streaming
+              }
               onClick={sendMessage}
               variant="solid"
             >
@@ -251,9 +313,6 @@ export function MiddleSection() {
             </IconButton>
           </Flex>
         </Center>
-
-        {/* Prompt buttons */}
-        {/* <PromptButtons onSummaryNews={() => handleSummaryNewsClick("vnexpress")} /> */}
       </VStack>
     </Center>
   );

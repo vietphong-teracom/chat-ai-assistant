@@ -23,8 +23,6 @@ const KNOWN_FEEDS: Record<string, string> = {
   laodong: "https://laodong.vn/rss/home.rss",
 };
 
-/** sendMessage: send theo inputValue + files (chat bình thường) */
-
 export function useChatStream({
   msgs,
   setMsgs,
@@ -39,6 +37,9 @@ export function useChatStream({
 }: UseChatStreamProps) {
   const sendMessage = async () => {
     if ((!inputValue.trim() && files.length === 0) || streaming) return;
+
+    const reminderEnabled = localStorage.getItem("reminderEnabled") === "true";
+    const userId = "123"; // tạm thời
 
     const newUserMessage: ChatMsg = {
       role: "user",
@@ -62,7 +63,6 @@ export function useChatStream({
     setStreaming(true);
     setError(null);
 
-    // Tạo AbortController
     const controller = new AbortController();
     abortRef.current = controller;
 
@@ -81,7 +81,32 @@ export function useChatStream({
     };
 
     try {
-      await askGPT(nextMsgs, onDelta, files, controller.signal);
+      if (reminderEnabled) {
+        // Gọi API /chat nếu reminderEnabled = true
+        const res = await fetch("http://localhost:4000/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, message: inputValue }),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Reminder API error: ${errText}`);
+        }
+
+        const data = await res.json();
+
+        // Stream trả về giống GPT
+        const reply = data.reply || "";
+        for (const char of reply) {
+          onDelta(char);
+          await new Promise((r) => setTimeout(r, 5)); // giả lập stream
+        }
+      } else {
+        // Gọi GPT bình thường
+        await askGPT(nextMsgs, onDelta, files, controller.signal);
+      }
     } catch (err: any) {
       console.error("Chat stream error:", err);
       setError(err.message || "Có lỗi xảy ra, vui lòng thử lại.");
@@ -91,7 +116,10 @@ export function useChatStream({
     }
   };
 
-  async function sendNewsSummary(providedMsgs: ChatMsg[], feedKey = "vnexpress") {
+  async function sendNewsSummary(
+    providedMsgs: ChatMsg[],
+    feedKey = "vnexpress"
+  ) {
     if (streaming) return;
     setError(null);
 
@@ -99,31 +127,27 @@ export function useChatStream({
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // Lấy last user message (caller phải pass providedMsgs có chứa user message ở cuối)
     const lastMsg = providedMsgs[providedMsgs.length - 1];
     if (!lastMsg || lastMsg.role !== "user") {
       setError("Internal: expected last message to be user message");
       return;
     }
 
-    // 1) Fetch RSS
     setStreaming(true);
     try {
-      // optional: show a temporary assistant message (đang lấy nguồn)
-      setMsgs((prev) => [...prev, { role: "assistant", content: "Đang lấy tin từ nguồn..." }]);
-
+      setMsgs((prev) => [
+        ...prev,
+        { role: "assistant", content: "Đang lấy tin từ nguồn..." },
+      ]);
       const feedText = await fetchRssAsText(feedUrl, 5, controller.signal);
 
-      // 2) Gộp content để gửi tới API (NHƯNG không update UI với content dài)
       const finalUserContent = `Nguồn: ${feedUrl}\n\n${feedText}\n\nYêu cầu: ${lastMsg.content}`;
+      const msgsForApi = [
+        ...providedMsgs.slice(0, -1),
+        { ...lastMsg, content: finalUserContent },
+      ];
 
-      // Chuẩn bị messages sẽ gửi tới API: thay thế last user message bằng finalUserContent
-      const msgsForApi = [...providedMsgs.slice(0, -1), { ...lastMsg, content: finalUserContent }];
-
-      // Remove the temporary "Đang lấy tin..." assistant message we just added
       setMsgs((prev) => prev.slice(0, Math.max(0, prev.length - 1)));
-
-      // 3) Append assistant placeholder for streaming in UI
       setMsgs((prev) => [...prev, { role: "assistant", content: "" }]);
 
       const onDelta = (delta: string) => {
@@ -131,13 +155,15 @@ export function useChatStream({
           const copy = [...prev];
           const last = copy[copy.length - 1];
           if (last?.role === "assistant") {
-            copy[copy.length - 1] = { ...last, content: (last.content || "") + delta };
+            copy[copy.length - 1] = {
+              ...last,
+              content: (last.content || "") + delta,
+            };
           }
           return copy;
         });
       };
 
-      // 4) Call askGPT with msgsForApi (user content enriched)
       await askGPT(msgsForApi, onDelta, [], controller.signal);
       setError(null);
     } catch (err: any) {
@@ -147,7 +173,6 @@ export function useChatStream({
         setError(err?.message ?? "Lỗi khi lấy/tóm tắt tin tức");
       }
       console.error("sendNewsSummary error:", err);
-      // Remove the temporary assistant entry if exists
       setMsgs((prev) => prev.slice(0, Math.max(0, prev.length - 1)));
     } finally {
       setStreaming(false);
@@ -158,24 +183,19 @@ export function useChatStream({
   async function sendNewsSummaryJSON() {
     try {
       const rssUrl = "https://vnexpress.net/rss/tin-moi-nhat.rss";
-
-      // Lấy JSON từ RSS
       const data = await fetchRssAsJson(rssUrl);
-
-      // Chọn 3-5 bài mới nhất
       const topArticles = data.items.slice(0, 5);
 
-      // Gom nội dung để gửi sang GPT
       const textContent = topArticles
-        .map((item: any, idx: number) => `${idx + 1}. ${item.title} - ${item.link}`)
+        .map(
+          (item: any, idx: number) => `${idx + 1}. ${item.title} - ${item.link}`
+        )
         .join("\n");
 
-      // Bây giờ bạn gọi API GPT để tóm tắt
       const userPrompt = `Hãy tóm tắt ngắn gọn các tin tức sau:\n${textContent}`;
-
-      return userPrompt; // bạn có thể gửi cái này sang luồng askGPT sẵn có
+      return userPrompt;
     } catch (err) {
-      console.error("sendNewsSummary error:", err);
+      console.error("sendNewsSummaryJSON error:", err);
       throw err;
     }
   }
