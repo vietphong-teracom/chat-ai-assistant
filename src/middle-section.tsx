@@ -1,4 +1,11 @@
-import { Box, Center, Flex, Heading, IconButton, VStack } from "@chakra-ui/react";
+import {
+  Box,
+  Center,
+  Flex,
+  Heading,
+  IconButton,
+  VStack,
+} from "@chakra-ui/react";
 import type { KeyboardEvent, SetStateAction } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import "../src/lib/index.css";
@@ -76,7 +83,11 @@ export function MiddleSection() {
       const data = await uploadFile({ formData, setFiles, previewUrl });
 
       setFiles((prev) =>
-        prev.map((f) => (f.previewUrl === previewUrl ? { ...f, fileId: data.id, uploading: false } : f))
+        prev.map((f) =>
+          f.previewUrl === previewUrl
+            ? { ...f, fileId: data.id, uploading: false }
+            : f
+        )
       );
     }
 
@@ -110,7 +121,11 @@ export function MiddleSection() {
 
         {/* Conversation */}
         <Center w="100%">
-          <Conversation msgs={msgs} streaming={streaming} scrollRef={scrollRef} />
+          <Conversation
+            msgs={msgs}
+            streaming={streaming}
+            scrollRef={scrollRef}
+          />
         </Center>
 
         {/* Input */}
@@ -127,7 +142,13 @@ export function MiddleSection() {
           >
             {/* Upload */}
             <Box w="40px" flexShrink={0}>
-              <input type="file" id="file-input" style={{ display: "none" }} multiple onChange={handleSelect} />
+              <input
+                type="file"
+                id="file-input"
+                style={{ display: "none" }}
+                multiple
+                onChange={handleSelect}
+              />
               <label htmlFor="file-input">
                 <IconButton
                   aria-label="Upload file"
@@ -142,7 +163,6 @@ export function MiddleSection() {
                 </IconButton>
               </label>
             </Box>
-
             {/* Files Preview + textarea */}
             <VStack flex="1" align="stretch" gap={1}>
               <FilePreview files={files} setFiles={setFiles} />
@@ -151,7 +171,9 @@ export function MiddleSection() {
                 maxRows={5}
                 placeholder="Input message here"
                 value={inputValue}
-                onChange={(e: { target: { value: SetStateAction<string> } }) => setInputValue(e.target.value)}
+                onChange={(e: { target: { value: SetStateAction<string> } }) =>
+                  setInputValue(e.target.value)
+                }
                 onKeyDown={handleKeyDown}
                 style={{
                   width: "100%",
@@ -170,7 +192,9 @@ export function MiddleSection() {
               aria-label="Send message"
               size="sm"
               borderRadius="full"
-              disabled={(inputValue.trim() === "" && files.length === 0) || streaming}
+              disabled={
+                (inputValue.trim() === "" && files.length === 0) || streaming
+              }
               onClick={sendMessage}
               variant="solid"
             >
@@ -180,7 +204,9 @@ export function MiddleSection() {
         </Center>
 
         {/* Prompt buttons */}
-        <PromptButtons onSummaryNews={() => handleSummaryNewsClick("vnexpress")} />
+        <PromptButtons
+          onSummaryNews={() => handleSummaryNewsClick("vnexpress")}
+        />
       </VStack>
     </Center>
   );

@@ -9,7 +9,6 @@ type MessageProps = {
   index: number;
   streaming: boolean;
 };
-
 export const Message = ({ msg, index, streaming }: MessageProps) => {
   return (
     <Box

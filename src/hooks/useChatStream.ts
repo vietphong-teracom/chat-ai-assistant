@@ -1,7 +1,11 @@
 // src/hooks/useChatStream.ts
 import type { ChatMsg, UploadedFile } from "@/types";
-import { askGPT } from "@/lib/GPT";
-import { fetchTopArticlesText } from "@/lib/fetchRss";
+import { askGPT, generateTTS } from "@/lib/GPT";
+import {
+  fetchRssAsJson,
+  fetchRssAsText,
+  fetchTopArticlesText,
+} from "@/lib/fetchRss";
 
 interface UseChatStreamProps {
   msgs: ChatMsg[];
@@ -16,14 +20,12 @@ interface UseChatStreamProps {
   setError: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-/** Mặc định map nguồn sang RSS (mở rộng nếu cần) */
+/** Mặc định map nguồn sang RSS */
 const KNOWN_FEEDS: Record<string, string> = {
   vnexpress: "https://vnexpress.net/rss/tin-moi-nhat.rss",
   thanhnien: "https://thanhnien.vn/rss/home.rss",
   laodong: "https://laodong.vn/rss/home.rss",
 };
-
-/** sendMessage: send theo inputValue + files (chat bình thường) */
 
 export function useChatStream({
   msgs,
@@ -37,9 +39,31 @@ export function useChatStream({
   abortRef,
   setError,
 }: UseChatStreamProps) {
-  const sendMessage = async () => {
-    if ((!inputValue.trim() && files.length === 0) || streaming) return;
+  const sendMessage = async (): Promise<string | null> => {
+    console.log("message", msgs);
+    if ((!inputValue.trim() && files.length === 0) || streaming) return null;
 
+    const ttsEnabled = localStorage.getItem("ttsEnabled") === "true";
+
+    // Nếu mic bật → chỉ tạo TTS, trả về Blob
+    if (ttsEnabled) {
+      try {
+        const controller = new AbortController();
+        abortRef.current = controller;
+        const mp3Url = await generateTTS(inputValue, controller.signal);
+        return mp3Url; // trả blob, UI sẽ xử lý render audio
+      } catch (err: any) {
+        console.error("TTS error:", err);
+        setError(err?.message || "Có lỗi TTS");
+        return null;
+      } finally {
+        abortRef.current = null;
+        setInputValue("");
+        setFiles([]);
+      }
+    }
+
+    // Nếu TTS tắt → hoạt động bình thường với GPT
     const newUserMessage: ChatMsg = {
       role: "user",
       content: inputValue,
@@ -55,18 +79,14 @@ export function useChatStream({
 
     const nextMsgs = [...msgs, newUserMessage];
     setMsgs(nextMsgs);
-
-    // Reset input + file list
     setInputValue("");
     setFiles([]);
     setStreaming(true);
     setError(null);
 
-    // Tạo AbortController
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // Thêm message rỗng của assistant để append stream
     setMsgs((prev) => [...prev, { role: "assistant", content: "" }]);
 
     const onDelta = (delta: string) => {
@@ -82,16 +102,50 @@ export function useChatStream({
 
     try {
       await askGPT(nextMsgs, onDelta, files, controller.signal);
+
+      if (ttsEnabled) {
+        try {
+          const controller = new AbortController();
+          abortRef.current = controller;
+
+          const mp3Url = await generateTTS(inputValue, controller.signal);
+
+          // Push luôn message user kèm audioUrl
+          const ttsMessage: ChatMsg = {
+            role: "assistant",
+            content: inputValue,
+            audioUrl: mp3Url,
+            files: [],
+          };
+          setMsgs((prev) => [...prev, ttsMessage]);
+
+          setInputValue("");
+          setFiles([]);
+          return mp3Url;
+        } catch (err: any) {
+          console.error("TTS error:", err);
+          setError(err?.message || "Có lỗi TTS");
+          return null;
+        } finally {
+          abortRef.current = null;
+        }
+      }
+
+      return null;
     } catch (err: any) {
       console.error("Chat stream error:", err);
-      setError(err.message || "Có lỗi xảy ra, vui lòng thử lại.");
+      setError(err?.message || "Có lỗi xảy ra, vui lòng thử lại.");
+      return null;
     } finally {
       setStreaming(false);
       abortRef.current = null;
     }
   };
 
-  async function sendNewsSummary(providedMsgs: ChatMsg[], feedKey = "vnexpress") {
+  async function sendNewsSummary(
+    providedMsgs: ChatMsg[],
+    feedKey = "vnexpress"
+  ) {
     if (streaming) return;
     setError(null);
 
@@ -109,17 +163,31 @@ export function useChatStream({
     setStreaming(true);
 
     // Add a temporary assistant message to show progress
-    setMsgs((prev) => [...prev, { role: "assistant", content: "Đang lấy tin từ nguồn..." }]);
+    setMsgs((prev) => [
+      ...prev,
+      { role: "assistant", content: "Đang lấy tin từ nguồn..." },
+    ]);
 
     try {
       // 1) fetch feed as text (top N articles)
-      const feedText = await fetchTopArticlesText(feedUrl, 5, controller.signal);
+      const feedText = await fetchTopArticlesText(
+        feedUrl,
+        5,
+        controller.signal
+      );
 
       // 2) construct final user content (we do NOT show the full feedText in UI to keep it clean)
       const finalUserContent = `Nguồn: ${feedUrl}\n\n${feedText}\n\nYêu cầu: ${lastMsg.content}`;
+      const msgsForApi = [
+        ...providedMsgs.slice(0, -1),
+        { ...lastMsg, content: finalUserContent },
+      ];
 
       // 3) prepare messages for API: replace last user message with enriched content
-      const msgsForApi: ChatMsg[] = [...providedMsgs.slice(0, -1), { ...lastMsg, content: finalUserContent }];
+      const msgsForApi: ChatMsg[] = [
+        ...providedMsgs.slice(0, -1),
+        { ...lastMsg, content: finalUserContent },
+      ];
 
       // remove temporary assistant progress message we just appended
       setMsgs((prev) => prev.slice(0, Math.max(0, prev.length - 1)));
@@ -133,7 +201,10 @@ export function useChatStream({
           const copy = [...prev];
           const last = copy[copy.length - 1];
           if (last?.role === "assistant") {
-            copy[copy.length - 1] = { ...last, content: (last.content || "") + delta };
+            copy[copy.length - 1] = {
+              ...last,
+              content: (last.content || "") + delta,
+            };
           }
           return copy;
         });
@@ -141,6 +212,7 @@ export function useChatStream({
 
       // 4) call the GPT streaming API
       await askGPT(msgsForApi, onDelta, [], controller.signal);
+
       setError(null);
     } catch (err: any) {
       if (err?.name === "AbortError") setError("Đã hủy truy vấn.");
