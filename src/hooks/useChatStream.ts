@@ -2,6 +2,7 @@
 import type { ChatMsg, UploadedFile } from "@/types";
 import { askGPT } from "@/lib/GPT";
 import { fetchTopArticlesText } from "@/lib/fetchRss";
+import { getFeedUrl } from "@/helper/getFeedUrl";
 
 interface UseChatStreamProps {
   msgs: ChatMsg[];
@@ -15,13 +16,6 @@ interface UseChatStreamProps {
   abortRef: React.MutableRefObject<AbortController | null>;
   setError: React.Dispatch<React.SetStateAction<string | null>>;
 }
-
-/** Mặc định map nguồn sang RSS (mở rộng nếu cần) */
-const KNOWN_FEEDS: Record<string, string> = {
-  vnexpress: "https://vnexpress.net/rss/tin-moi-nhat.rss",
-  thanhnien: "https://thanhnien.vn/rss/home.rss",
-  laodong: "https://laodong.vn/rss/home.rss",
-};
 
 /** sendMessage: send theo inputValue + files (chat bình thường) */
 
@@ -91,11 +85,11 @@ export function useChatStream({
     }
   };
 
-  async function sendNewsSummary(providedMsgs: ChatMsg[], feedKey = "vnexpress") {
+  async function sendNewsSummary(providedMsgs: ChatMsg[], feedKey: string) {
     if (streaming) return;
     setError(null);
 
-    const feedUrl = KNOWN_FEEDS[feedKey] ?? KNOWN_FEEDS["vnexpress"];
+    const feedUrl = getFeedUrl(feedKey);
     const controller = new AbortController();
     abortRef.current = controller;
 
