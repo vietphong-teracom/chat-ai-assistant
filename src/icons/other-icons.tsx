@@ -66,23 +66,27 @@ export function HatIcon(props: IconProps) {
     </Icon>
   );
 }
+export function NewsIcon(props: IconProps) {
+  return (
+    <Icon viewBox="0 0 26 24" fill="none" {...props}>
+      <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="100" height="100" viewBox="0 0 48 48">
+        <path fill="#FF5722" d="M32,15v28H10c-2.2,0-4-1.8-4-4V15H32z"></path>
+        <path fill="#FFCCBC" d="M14,5v34c0,2.2-1.8,4-4,4h29c2.2,0,4-1.8,4-4V5H14z"></path>
+        <path
+          fill="#FF5722"
+          d="M20 10H38V14H20zM20 17H28V19H20zM30 17H38V19H30zM20 21H28V23H20zM30 21H38V23H30zM20 25H28V27H20zM30 25H38V27H30zM20 29H28V31H20zM30 29H38V31H30zM20 33H28V35H20zM30 33H38V35H30zM20 37H28V39H20zM30 37H38V39H30z"
+        ></path>
+      </svg>
+    </Icon>
+  );
+}
 
 export function WriteIcon(props: IconProps) {
   return (
     <Icon viewBox="0 0 24 24" fill="none" {...props}>
       <svg>
-        <path
-          d="M3 6H10"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        ></path>
-        <path
-          d="M3 10H7"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        ></path>
+        <path d="M3 6H10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"></path>
+        <path d="M3 10H7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"></path>
         <path
           d="M13.4282 17.5718L20.5 10.5C21.6046 9.39543 21.6046 7.60457 20.5 6.5C19.3954 5.39543 17.6046 5.39543 16.5 6.5L9.42819 13.5718C9.14899 13.851 8.95868 14.2066 8.88124 14.5938L8 19L12.4062 18.1188C12.7934 18.0413 13.149 17.851 13.4282 17.5718Z"
           stroke="currentColor"
@@ -309,12 +313,7 @@ export function CheckIcon(props: IconProps) {
 }
 
 export const PdfFileIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="20"
-    height="20"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
     {/* Nền đỏ bo tròn */}
     <rect width="24" height="24" rx="6" fill="#EF4444" />
 
@@ -332,12 +331,7 @@ export const PdfFileIcon = () => (
 );
 
 export const DocFileIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="24"
-    height="24"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
     {/* Nền xanh bo tròn */}
     <rect width="24" height="24" rx="6" fill="#0A84FF" />
 
@@ -357,26 +351,12 @@ export const DocFileIcon = () => (
 );
 
 export const XlsFileIcon = () => (
-  <svg
-    viewBox="0 0 24 24"
-    width="32"
-    height="32"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg viewBox="0 0 24 24" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
     {/* Nền xanh lá bo tròn */}
     <rect width="24" height="24" rx="6" fill="#22C55E" />
 
     {/* Biểu tượng bảng Excel */}
-    <rect
-      x="8"
-      y="8"
-      width="8"
-      height="8"
-      stroke="white"
-      strokeWidth="1.5"
-      fill="none"
-      rx="1"
-    />
+    <rect x="8" y="8" width="8" height="8" stroke="white" strokeWidth="1.5" fill="none" rx="1" />
     <line x1="12" y1="8" x2="12" y2="16" stroke="white" strokeWidth="1.5" />
     <line x1="8" y1="12" x2="16" y2="12" stroke="white" strokeWidth="1.5" />
   </svg>
@@ -384,37 +364,15 @@ export const XlsFileIcon = () => (
 
 export const PptFileIcon = () => (
   <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
-    <path
-      d="M6 2h7l5 5v13a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z"
-      stroke="currentColor"
-      strokeWidth="1.2"
-    />
+    <path d="M6 2h7l5 5v13a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.2" />
     <path d="M13 2v5h5" stroke="currentColor" strokeWidth="1.2" />
-    <text
-      x="12"
-      y="16"
-      textAnchor="middle"
-      fontSize="6"
-      fontWeight="bold"
-      fill="currentColor"
-    ></text>
+    <text x="12" y="16" textAnchor="middle" fontSize="6" fontWeight="bold" fill="currentColor"></text>
   </svg>
 );
 export const DefaultFileIcon = () => (
   <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
-    <path
-      d="M6 2h7l5 5v13a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z"
-      stroke="currentColor"
-      strokeWidth="1.2"
-    />
+    <path d="M6 2h7l5 5v13a2 2 0 01-2 2H6a2 2 0 01-2-2V4a2 2 0 012-2z" stroke="currentColor" strokeWidth="1.2" />
     <path d="M13 2v5h5" stroke="currentColor" strokeWidth="1.2" />
-    <text
-      x="12"
-      y="16"
-      textAnchor="middle"
-      fontSize="6"
-      fontWeight="bold"
-      fill="currentColor"
-    ></text>
+    <text x="12" y="16" textAnchor="middle" fontSize="6" fontWeight="bold" fill="currentColor"></text>
   </svg>
 );
