@@ -2,7 +2,6 @@
 import type { ChatMsg, UploadedFile } from "@/types";
 import { askGPT, generateTTS } from "@/lib/GPT";
 import { fetchTopArticlesText } from "@/lib/fetchRss";
-import { useEffect } from "react";
 
 interface UseChatStreamProps {
   msgs: ChatMsg[];
