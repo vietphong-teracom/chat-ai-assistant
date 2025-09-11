@@ -16,11 +16,10 @@ export type ChatMsg = {
 
 export interface UploadedFile {
   rawFile: File;
-  fileName: string;
-  fileSize: number;
-  fileType: string;
-  filePreviewUrl?: string;
-  filePrompt: QuickPrompt;
+  name: string;
+  size: number;
+  type: string;
+  previewUrl?: string;
 }
 
 export type InputContent = { type: 'input_text'; text: string } | { type: 'input_file'; file_id: string };

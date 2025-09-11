@@ -55,11 +55,10 @@ export function MiddleSection() {
     const selectedFiles = Array.from(e.target.files);
     const fileInfoList = selectedFiles.map((file) => ({
       rawFile: file,
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      filePreviewUrl: URL.createObjectURL(file),
-      filePrompt: QuickPrompt.SUMMARY,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      previewUrl: URL.createObjectURL(file),
     }));
     setFiles(fileInfoList);
     e.target.value = '';
