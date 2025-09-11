@@ -3,6 +3,7 @@ import { fetchTopArticlesText } from "@/lib/fetchRss";
 import { askGPT } from "@/lib/gpt/QaA";
 import { generateTTS } from "@/lib/gpt/textToSpeech";
 import { getRssFeed } from "@/helper/getRssFeed";
+import { generateSTT } from "@/lib/gpt/speechToText";
 
 interface UseChatStreamProps {
   msgs: ChatMsg[];
@@ -157,6 +158,36 @@ export function useChatStream({
       setStreaming(false);
     }
   }
+async function askSpeechToText(file: File) {
+  if (streaming) return;
 
-  return { askGPTQuestion, askGPTSummaryNews, askGPTTextToSpeech };
+  setError(null);
+  setStreaming(true);
+
+  // Thêm message placeholder của assistant
+  setMsgs((prev) => [...prev, { role: "assistant", content: "" }]);
+
+  try {
+    // ✅ Gọi hàm generateSTT có sẵn
+    const text = await generateSTT(file, abortRef.current?.signal);
+
+    // Cập nhật message assistant với văn bản
+    setMsgs((prev) => {
+      const copy = [...prev];
+      const last = copy[copy.length - 1];
+      if (last?.role === "assistant") {
+        copy[copy.length - 1] = { ...last, content: text };
+      }
+      return copy;
+    });
+  } catch (err: any) {
+    console.error("askSpeechToText error:", err);
+    setError(err?.message || "Không thể chuyển giọng nói thành văn bản.");
+  } finally {
+    setStreaming(false);
+  }
+}
+
+
+  return { askGPTQuestion, askGPTSummaryNews, askGPTTextToSpeech,askSpeechToText };
 }

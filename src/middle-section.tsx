@@ -1,5 +1,5 @@
 import { Box, Center, Flex, Heading, IconButton, VStack } from "@chakra-ui/react";
-import type { KeyboardEvent, SetStateAction } from "react";
+import {  KeyboardEvent, SetStateAction } from "react";
 import TextareaAutosize from "react-textarea-autosize";
 import "../src/lib/index.css";
 import { Conversation } from "./Conversation";
@@ -10,6 +10,7 @@ import { useChatStream } from "./hooks/useChatStream";
 import { EnterIcon, UploadIcon } from "./icons/other-icons";
 import { uploadFile } from "./lib/upload-file";
 import { PromptButtons } from "./PromptButton";
+import { VoiceRecorder } from "./VoiceRecorder";
 
 export function MiddleSection() {
   const {
@@ -27,7 +28,7 @@ export function MiddleSection() {
     scrollRef,
   } = useChatState();
 
-  const { askGPTQuestion, askGPTSummaryNews, askGPTTextToSpeech } = useChatStream({
+  const { askGPTQuestion, askGPTSummaryNews, askGPTTextToSpeech,askSpeechToText } = useChatStream({
     msgs,
     setMsgs,
     inputValue,
@@ -66,8 +67,6 @@ export function MiddleSection() {
           uploading: true, // đang upload
         },
       ]);
-
-      // 2. Bắt đầu upload lên server
       const formData = new FormData();
       formData.append("file", file);
       formData.append("purpose", "assistants");
@@ -81,7 +80,7 @@ export function MiddleSection() {
 
     e.target.value = "";
   };
-
+ 
   return (
     <Center flex="1" bg="#9ca3af38">
       <VStack gap="6" w="100%">
@@ -147,6 +146,8 @@ export function MiddleSection() {
               />
             </VStack>
 
+      <VoiceRecorder setInputValue={setInputValue} setError={setError} />
+
             {/* Send */}
             <IconButton
               aria-label="Send message"
@@ -168,6 +169,7 @@ export function MiddleSection() {
           streaming={streaming}
           onSummaryNews={() => askGPTSummaryNews("vnexpress")}
           onTextToSpeech={askGPTTextToSpeech}
+          onSpeechToText={askSpeechToText}
         />
       </VStack>
     </Center>
