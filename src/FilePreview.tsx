@@ -13,7 +13,7 @@ export function FilePreview({ files }: FilePreviewProps) {
       {files.length > 0 && (
         <VStack align='stretch' gap={2}>
           {files.map((file, index) => {
-            const ext = file.fileName.split('.').pop() || '';
+            const ext = file.name.split('.').pop() || '';
             const { color, icon } = getFileMeta(ext);
 
             return (
@@ -29,10 +29,10 @@ export function FilePreview({ files }: FilePreviewProps) {
                 w='fit-content'
               >
                 {/* Nếu là ảnh → preview thumbnail */}
-                {file.fileType.startsWith('image/') ? (
+                {file.type.startsWith('image/') ? (
                   <img
-                    src={file.filePreviewUrl || ''}
-                    alt={file.fileName}
+                    src={file.previewUrl || ''}
+                    alt={file.name}
                     style={{
                       width: 50,
                       height: 50,
@@ -60,7 +60,7 @@ export function FilePreview({ files }: FilePreviewProps) {
                 {/* Info */}
                 <Flex direction='column' flex='1' minW={0}>
                   <Text fontSize='sm' fontWeight='bold' whiteSpace='nowrap' textOverflow='ellipsis' overflow='hidden'>
-                    {file.fileName}
+                    {file.name}
                   </Text>
                   <Text fontSize='xs' color='gray.500'>
                     {ext.toUpperCase()}

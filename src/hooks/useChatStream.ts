@@ -64,11 +64,16 @@ export function useChatStream({
 
   const chatQaA = async () => {
     if (!inputValue || streaming) return;
-    const userMsg = {
+    const userMsg: ChatMsg = {
       role: 'user' as Role,
+      displayContent: inputValue,
       content: inputValue,
       files,
     };
+    if (files.length) {
+      const fileContent = await extractTextFromFile(files?.[0]?.rawFile);
+      userMsg.content = `${inputValue}:\n\n${fileContent}`;
+    }
     const newMsg = [...msgs, userMsg, assistantEmptyMsg];
     setMsgs(newMsg);
     setInputValue('');
@@ -79,17 +84,18 @@ export function useChatStream({
   const summaryDocument = async (file: File) => {
     if (!file || streaming) return;
     try {
-      const text = await extractTextFromFile(file);
+      const fileContent = await extractTextFromFile(file);
+      const displayContent = QUICK_PROMPT[QuickPrompt.SUMMARY];
       const userMsg = {
         role: 'user' as Role,
-        content: `${QUICK_PROMPT[QuickPrompt.SUMMARY]}:\n\n${text}`,
+        displayContent,
+        content: `${displayContent}:\n\n${fileContent}`,
         files: [
           {
-            fileName: file.name,
-            fileSize: file.size,
-            fileType: file.type,
-            filePreviewUrl: URL.createObjectURL(file),
-            filePrompt: QuickPrompt.SUMMARY,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            previewUrl: URL.createObjectURL(file),
           },
         ],
       };
@@ -105,17 +111,18 @@ export function useChatStream({
   const ttsDocument = async (file: File) => {
     if (!file || streaming) return;
     try {
-      const text = await extractTextFromFile(file);
+      const fileContent = await extractTextFromFile(file);
+      const displayContent = QUICK_PROMPT[QuickPrompt.TTS];
       const userMsg = {
         role: 'user' as Role,
-        content: `${QUICK_PROMPT[QuickPrompt.TTS]}:\n\n${text}`,
+        displayContent,
+        content: `${displayContent}:\n\n${fileContent}`,
         files: [
           {
-            fileName: file.name,
-            fileSize: file.size,
-            fileType: file.type,
-            filePreviewUrl: URL.createObjectURL(file),
-            filePrompt: QuickPrompt.TTS,
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            previewUrl: URL.createObjectURL(file),
           },
         ],
       };
@@ -127,7 +134,7 @@ export function useChatStream({
       const controller = new AbortController();
       abortRef.current = controller;
 
-      const url = await generateTTS(text);
+      const url = await generateTTS(fileContent);
       // Cập nhật lại message cuối cùng với audioUrl
       setMsgs((prev) => {
         const copy = [...prev];

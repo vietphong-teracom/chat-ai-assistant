@@ -31,7 +31,7 @@ export const uploadFile = async ({ formData, setFiles, previewUrl }: UploadFileP
     return await res.json();
   } catch (err) {
     console.error('Error uploading file:', err);
-    setFiles((prev) => prev.filter((f) => f.filePreviewUrl !== previewUrl));
+    setFiles((prev) => prev.filter((f) => f.previewUrl !== previewUrl));
   }
 };
 
@@ -56,7 +56,7 @@ export async function handleFileUpload(
     const data = await uploadFile({ formData, setFiles, previewUrl });
 
     setFiles((prev) =>
-      prev.map((f) => (f.filePreviewUrl === previewUrl ? { ...f, fileId: data.id, uploading: false } : f))
+      prev.map((f) => (f.previewUrl === previewUrl ? { ...f, fileId: data.id, uploading: false } : f))
     );
   }
 

@@ -26,7 +26,7 @@ export const removeFile = async ({ files, setFiles, index }: RemoveFileProp) => 
     //   return;
     // }
 
-    const res = await fetch(`${API_URL}/files/${fileToDelete.fileName}`, {
+    const res = await fetch(`${API_URL}/files/${fileToDelete.name}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${API_KEY}`,
