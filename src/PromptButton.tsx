@@ -1,14 +1,11 @@
 // src/PromptButton.tsx (hoặc file PromptButtons.tsx)
 import { Box, HStack } from "@chakra-ui/react";
+import { FaRegNewspaper } from "react-icons/fa";
+import { FiFileText } from "react-icons/fi";
+import { GrDocumentSound } from "react-icons/gr";
 import "../src/lib/index.css";
 import { Button } from "./components/ui/button";
-import { FaRegNewspaper, FaVolumeUp } from "react-icons/fa";
-import { FcNews } from "react-icons/fc";
-import { GrDocumentPerformance, GrDocumentSound } from "react-icons/gr";
 import { UploadedFile } from "./types";
-import { HiOutlineDocumentSearch } from "react-icons/hi";
-import { AiOutlineFileDone } from "react-icons/ai";
-import { FiFileText } from "react-icons/fi";
 
 interface PromptButtonProps {
   icon?: React.ReactElement;
