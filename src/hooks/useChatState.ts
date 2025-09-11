@@ -1,12 +1,13 @@
-import { useRef, useState, useEffect } from "react";
-import type { ChatMsg, UploadedFile } from "@/types";
+import { useRef, useState, useEffect } from 'react';
+import type { ChatMsg, QuickPrompt, UploadedFile } from '@/types';
 
 export function useChatState() {
   const [msgs, setMsgs] = useState<ChatMsg[]>([
-    { role: "system", content: "Bạn là trợ lý hữu ích, trả lời ngắn gọn, rõ ràng." },
+    { role: 'system', content: 'Bạn là trợ lý hữu ích, trả lời ngắn gọn, rõ ràng.' },
   ]);
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState('');
   const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [quickPrompt, setQuickPrompt] = useState<QuickPrompt | null>(null);
 
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,7 +17,7 @@ export function useChatState() {
 
   // Tự động scroll xuống cuối khi có message mới
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [msgs]);
 
   return {
@@ -32,5 +33,7 @@ export function useChatState() {
     setError,
     abortRef,
     scrollRef,
+    quickPrompt,
+    setQuickPrompt,
   };
 }

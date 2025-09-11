@@ -1,8 +1,10 @@
-import type { ChatMsg, Role, UploadedFile } from "@/types";
-import { fetchTopArticlesText } from "@/lib/fetchRss";
-import { askGPT } from "@/lib/gpt/QaA";
-import { generateTTS } from "@/lib/gpt/textToSpeech";
-import { getRssFeed } from "@/helper/getRssFeed";
+import { QUICK_PROMPT } from '@/const';
+import { extractTextFromFile } from '@/helper/extractText';
+import { getRssFeed } from '@/helper/getRssFeed';
+import { fetchTopArticlesText } from '@/lib/fetchRss';
+import { callAPIGPT } from '@/lib/gpt/chatResponse';
+import { generateTTS } from '@/lib/gpt/textToSpeech';
+import { QuickPrompt, type ChatMsg, type Role, type UploadedFile } from '@/types';
 
 interface UseChatStreamProps {
   msgs: ChatMsg[];
@@ -29,37 +31,19 @@ export function useChatStream({
   abortRef,
   setError,
 }: UseChatStreamProps) {
-  const assistantEmptyMessage = { role: "assistant" as Role, content: "" };
-  const appendStreamingData = (delta: string) => {
+  const assistantEmptyMsg = { role: 'assistant' as Role, content: '' };
+  const appendStreamingMsg = (delta: string) => {
     setMsgs((prev) => {
       const copy = [...prev];
       const last = copy[copy.length - 1];
-      if (last?.role === "assistant") {
-        copy[copy.length - 1] = { ...last, content: (last.content || "") + delta };
+      if (last?.role === 'assistant') {
+        copy[copy.length - 1] = { ...last, content: (last.content || '') + delta };
       }
       return copy;
     });
   };
 
-  const askGPTQuestion = async () => {
-    if ((!inputValue && files.length === 0) || streaming) return;
-    const newUserMessage: ChatMsg = {
-      role: "user",
-      content: inputValue,
-      files: files.map((f) => ({
-        name: f.name,
-        type: f.type,
-        fileId: f.fileId!,
-        previewUrl: f.previewUrl,
-        size: f.size,
-        uploading: f.uploading ?? false,
-      })),
-    };
-    // append user message and assistantEmptyMessage
-    const nextMsgs = [...msgs, newUserMessage, assistantEmptyMessage];
-    setMsgs(nextMsgs);
-    setInputValue("");
-    setFiles([]);
+  const askGPT = async (gptMsgs: ChatMsg[]) => {
     setStreaming(true);
     setError(null);
 
@@ -68,25 +52,107 @@ export function useChatStream({
     abortRef.current = controller;
 
     try {
-      await askGPT(nextMsgs, appendStreamingData, files, controller.signal);
+      await callAPIGPT(gptMsgs, appendStreamingMsg, controller.signal);
     } catch (err: any) {
-      console.error("Chat stream error:", err);
-      setError(err.message || "Có lỗi xảy ra, vui lòng thử lại.");
+      console.error('Chat stream error:', err);
+      setError(err.message || 'Có lỗi xảy ra, vui lòng thử lại.');
     } finally {
       setStreaming(false);
       abortRef.current = null;
     }
   };
 
-  async function askGPTSummaryNews(feedKey = "vnexpress") {
+  const chatQaA = async () => {
+    if (!inputValue || streaming) return;
+    const userMsg = {
+      role: 'user' as Role,
+      content: inputValue,
+      files,
+    };
+    const newMsg = [...msgs, userMsg, assistantEmptyMsg];
+    setMsgs(newMsg);
+    setInputValue('');
+    setFiles([]);
+    askGPT(newMsg);
+  };
+
+  const summaryDocument = async (file: File) => {
+    if (!file || streaming) return;
+    try {
+      const text = await extractTextFromFile(file);
+      const userMsg = {
+        role: 'user' as Role,
+        content: `${QUICK_PROMPT[QuickPrompt.SUMMARY]}:\n\n${text}`,
+        files: [
+          {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            filePreviewUrl: URL.createObjectURL(file),
+            filePrompt: QuickPrompt.SUMMARY,
+          },
+        ],
+      };
+      const newMsg = [...msgs, userMsg, assistantEmptyMsg];
+      setMsgs(newMsg);
+      await askGPT(newMsg);
+    } catch (err) {
+      console.error('Lỗi khi đọc file:', err);
+      setError('Không thể đọc nội dung từ file');
+    }
+  };
+
+  const ttsDocument = async (file: File) => {
+    if (!file || streaming) return;
+    try {
+      const text = await extractTextFromFile(file);
+      const userMsg = {
+        role: 'user' as Role,
+        content: `${QUICK_PROMPT[QuickPrompt.TTS]}:\n\n${text}`,
+        files: [
+          {
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+            filePreviewUrl: URL.createObjectURL(file),
+            filePrompt: QuickPrompt.TTS,
+          },
+        ],
+      };
+      const newMsg = [...msgs, userMsg, assistantEmptyMsg];
+      setMsgs(newMsg);
+      setStreaming(true);
+      setError(null);
+      // Tạo AbortController
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      const url = await generateTTS(text);
+      // Cập nhật lại message cuối cùng với audioUrl
+      setMsgs((prev) => {
+        const copy = [...prev];
+        const last = copy[copy.length - 1];
+        if (last?.role === 'assistant') {
+          copy[copy.length - 1] = { ...last, audioUrl: url };
+        }
+        return copy;
+      });
+    } catch (err) {
+      console.error('Lỗi khi đọc file:', err);
+      setError('Không thể đọc nội dung từ file');
+    } finally {
+      setStreaming(false);
+      abortRef.current = null;
+    }
+  };
+
+  async function summaryNews(feedKey = 'vnexpress') {
     if (streaming) return;
 
-    const userPrompt = "Cập nhật tin tức mới nhất trong ngày";
-    const userMsg: ChatMsg = { role: "user", content: userPrompt };
-
-    // append user message and assistantEmptyMessage
-    const nextMsgs = [...msgs, userMsg];
-    setMsgs(nextMsgs);
+    const userTyped = 'Cập nhật tin tức mới nhất trong ngày';
+    const userMsg: ChatMsg = { role: 'user', displayContent: userTyped, content: '' };
+    const newMsgs = [...msgs, userMsg];
+    setMsgs(newMsgs);
     setStreaming(true);
     setError(null);
 
@@ -100,63 +166,26 @@ export function useChatStream({
       const feedText = await fetchTopArticlesText(feedUrl, 10, controller.signal);
 
       // 2) construct final user content (we do NOT show the full feedText in UI to keep it clean)
-      const finalUserContent = `Nguồn: ${feedUrl}\n\n${feedText}\n\nYêu cầu: ${userPrompt}`;
+      const prompt = `Nguồn: ${feedUrl}\n\n${feedText}\n\nYêu cầu: ${userTyped}`;
 
       // 3) prepare messages for API: replace last user message with enriched content
-      const msgsForApi: ChatMsg[] = [...nextMsgs.slice(0, -1), { ...userMsg, content: finalUserContent }];
+      const promptMsgs = [...newMsgs.slice(0, -1), { ...userMsg, content: prompt }];
 
       // Thêm message rỗng của assistant để khi có res thì append stream sau
-      setMsgs((prev) => [...prev, { role: "assistant", content: "" }]);
+      setMsgs([...promptMsgs, { role: 'assistant', content: '' }]);
 
       // 4) call the GPT streaming API
-      await askGPT(msgsForApi, appendStreamingData, [], controller.signal);
+      await askGPT(promptMsgs);
       setError(null);
     } catch (err: any) {
-      if (err?.name === "AbortError") setError("Đã hủy truy vấn.");
-      else setError(err?.message ?? "Lỗi khi lấy/tóm tắt tin tức");
-      console.error("sendNewsSummary error:", err);
+      if (err?.name === 'AbortError') setError('Đã hủy truy vấn.');
+      else setError(err?.message ?? 'Lỗi khi lấy/tóm tắt tin tức');
+      console.error('sendNewsSummary error:', err);
     } finally {
       setStreaming(false);
       abortRef.current = null;
     }
   }
 
-  async function askGPTTextToSpeech() {
-    if ((!inputValue && files.length === 0) || streaming) return;
-
-    const userPrompt = inputValue ? "Đọc đoạn văn bản sau" : "Đọc văn bản tài liệu sau";
-    const finalUserContent = `${userPrompt}: \n\n${inputValue}`;
-
-    const userMsg: ChatMsg = { role: "user", content: finalUserContent };
-
-    // Append user message immediately to UI
-    const nextMsgs = [...msgs, userMsg];
-    setMsgs(nextMsgs);
-    setInputValue("");
-
-    setStreaming(true);
-    setError(null);
-
-    // ✅ Thêm assistant message placeholder để hiển thị ThinkingMessage
-    setMsgs((prev) => [...prev, { role: "assistant", content: "" }]);
-    try {
-      const url = await generateTTS(inputValue);
-      // Cập nhật lại message cuối cùng với audioUrl
-      setMsgs((prev) => {
-        const copy = [...prev];
-        const last = copy[copy.length - 1];
-        if (last?.role === "assistant") {
-          copy[copy.length - 1] = { ...last, audioUrl: url };
-        }
-        return copy;
-      });
-    } catch (err: any) {
-      console.error("sendTextToSpeech error:", err);
-      setError(err?.message || "Không thể tạo audio từ văn bản.");
-    } finally {
-      setStreaming(false);
-    }
-  }
-
-  return { askGPTQuestion, askGPTSummaryNews, askGPTTextToSpeech };
+  return { chatQaA, summaryDocument, ttsDocument, summaryNews };
 }

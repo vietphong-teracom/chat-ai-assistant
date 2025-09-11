@@ -1,11 +1,10 @@
-// src/PromptButton.tsx (hoặc file PromptButtons.tsx)
-import { Box, HStack } from "@chakra-ui/react";
-import { FaRegNewspaper } from "react-icons/fa";
-import { FiFileText } from "react-icons/fi";
-import { GrDocumentSound } from "react-icons/gr";
-import "../src/lib/index.css";
-import { Button } from "./components/ui/button";
-import { UploadedFile } from "./types";
+import { Box, HStack } from '@chakra-ui/react';
+import { GrDocumentSound } from 'react-icons/gr';
+import '../src/lib/index.css';
+import { Button } from './components/ui/button';
+import { FiFileText } from 'react-icons/fi';
+import { QuickPrompt } from './types';
+import { FaRegNewspaper } from 'react-icons/fa';
 
 interface PromptButtonProps {
   icon?: React.ReactElement;
@@ -16,7 +15,7 @@ interface PromptButtonProps {
 
 function PromptButton({ icon, description, onClick, disabled }: PromptButtonProps) {
   return (
-    <Button variant="outline" borderRadius="full" onClick={onClick} bg={"#f8f5f4"} disabled={disabled}>
+    <Button variant='outline' borderRadius='full' onClick={onClick} bg={'#f8f5f4'} disabled={disabled}>
       {icon}
       <Box>{description}</Box>
     </Button>
@@ -24,35 +23,27 @@ function PromptButton({ icon, description, onClick, disabled }: PromptButtonProp
 }
 
 interface PromptButtonsProps {
-  files: UploadedFile[];
-  inputValue: string;
-  streaming: boolean;
+  onTriggerQuickPrompt: (quickPrompt: QuickPrompt) => void;
   onSummaryNews?: () => void;
-  onTextToSpeech?: () => void;
 }
-export function PromptButtons({ files, inputValue, streaming, onSummaryNews, onTextToSpeech }: PromptButtonsProps) {
-  const isDisabledBtn = streaming || (!files?.[0]?.fileId && !inputValue);
+export function PromptButtons({ onTriggerQuickPrompt, onSummaryNews }: PromptButtonsProps) {
   return (
-    <HStack gap="4" mb={6}>
+    <HStack gap='4' mb={6}>
       <PromptButton
-        icon={<FaRegNewspaper color="#ce88f9ff" fontSize="lg" />}
-        description="Cập Nhật Tin Tức"
+        icon={<FaRegNewspaper color='#ce88f9ff' fontSize='lg' />}
+        description='Cập Nhật Tin Tức'
         onClick={onSummaryNews}
       />
       <PromptButton
-        disabled
-        icon={<FiFileText fontSize="lg" color="#eeb170ff" />}
-        description="Tóm Tắt Văn Bản"
-        onClick={onSummaryNews}
+        icon={<FiFileText fontSize='lg' color='#eeb170ff' />}
+        description='Tóm Tắt Văn Bản'
+        onClick={() => onTriggerQuickPrompt(QuickPrompt.SUMMARY)}
       />
       <PromptButton
-        disabled={isDisabledBtn}
-        icon={<GrDocumentSound color="#538336ff" fontSize="lg" />}
-        description="Đọc Văn Bản"
-        onClick={onTextToSpeech}
+        icon={<GrDocumentSound color='#538336ff' fontSize='lg' />}
+        description='Đọc Văn Bản'
+        onClick={() => onTriggerQuickPrompt(QuickPrompt.TTS)}
       />
-      {/* <PromptButton icon={<BirthdayIcon color="cyan.400" fontSize="lg" />} description="Surprise" />
-      <PromptButton description="More" /> */}
     </HStack>
   );
 }
