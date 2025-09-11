@@ -11,6 +11,7 @@ import { EnterIcon, UploadIcon } from "./icons/other-icons";
 import { uploadFile } from "./lib/upload-file";
 import { PromptButtons } from "./PromptButton";
 import { VoiceRecorder } from "./VoiceRecorder";
+import { ChatMsg } from "./types";
 
 export function MiddleSection() {
   const {
@@ -40,7 +41,14 @@ export function MiddleSection() {
     abortRef,
     setError,
   });
-
+const addUserAudio = (audioUrl: string) => {
+  const userMsg: ChatMsg = {
+    role: "user",
+    content: "",       
+    audioUrl,
+  };
+  setMsgs(prev => [...prev, userMsg]);
+};
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -170,6 +178,7 @@ export function MiddleSection() {
           onSummaryNews={() => askGPTSummaryNews("vnexpress")}
           onTextToSpeech={askGPTTextToSpeech}
           onSpeechToText={askSpeechToText}
+            addUserAudio={addUserAudio}
         />
       </VStack>
     </Center>

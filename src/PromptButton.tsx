@@ -1,4 +1,4 @@
-import { Box, HStack } from "@chakra-ui/react";
+import { Box, HStack, VStack } from "@chakra-ui/react";
 import { FaRegNewspaper } from "react-icons/fa";
 import { FiFileText } from "react-icons/fi";
 import { GrDocumentSound } from "react-icons/gr";
@@ -35,6 +35,7 @@ interface PromptButtonsProps {
   onSummaryNews?: () => void;
   onTextToSpeech?: () => void;
   onSpeechToText: (file: File) => void;
+  addUserAudio: (audioUrl: string) => void;
 }
 
 export function PromptButtons({
@@ -44,38 +45,42 @@ export function PromptButtons({
   onSummaryNews,
   onTextToSpeech,
   onSpeechToText,
+  addUserAudio
 }: PromptButtonsProps) {
+
   const isDisabledBtn = streaming || (!files?.[0]?.fileId && !inputValue);
 
-  // Hàm xử lý chọn file audio trực tiếp
   const handleSpeechFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.[0]) return;
     const file = e.target.files[0];
+    const url = URL.createObjectURL(file);
+    addUserAudio( url);
     onSpeechToText(file);
     e.target.value = ""; // reset input
   };
 
   return (
-    <HStack gap="4" mb={6}>
-      <PromptButton
-        icon={<FaRegNewspaper color="#ce88f9ff" fontSize="lg" />}
-        description="Cập Nhật Tin Tức"
-        onClick={onSummaryNews}
-      />
+    <VStack align="start" >
+      <HStack gap="4" mb={2}>
+        <PromptButton
+          icon={<FaRegNewspaper color="#ce88f9ff" fontSize="lg" />}
+          description="Cập Nhật Tin Tức"
+          onClick={onSummaryNews}
+        />
 
-      <PromptButton
-        disabled
-        icon={<FiFileText fontSize="lg" color="#eeb170ff" />}
-        description="Tóm Tắt Văn Bản"
-        onClick={onSummaryNews}
-      />
+        <PromptButton
+          disabled
+          icon={<FiFileText fontSize="lg" color="#eeb170ff" />}
+          description="Tóm Tắt Văn Bản"
+          onClick={onSummaryNews}
+        />
 
-      <PromptButton
-        disabled={isDisabledBtn}
-        icon={<GrDocumentSound color="#538336ff" fontSize="lg" />}
-        description="Đọc Văn Bản"
-        onClick={onTextToSpeech}
-      />
+        <PromptButton
+          disabled={isDisabledBtn}
+          icon={<GrDocumentSound color="#538336ff" fontSize="lg" />}
+          description="Đọc Văn Bản"
+          onClick={onTextToSpeech}
+        />
 
         <PromptButton
           disabled={streaming}
@@ -90,7 +95,9 @@ export function PromptButtons({
           style={{ display: "none" }}
           onChange={handleSpeechFile}
         />
+      </HStack>
 
-    </HStack>
+     
+    </VStack>
   );
 }
