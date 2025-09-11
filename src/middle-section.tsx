@@ -10,31 +10,30 @@ import { useChatStream } from "./hooks/useChatStream";
 import { EnterIcon, UploadIcon } from "./icons/other-icons";
 import { uploadFile } from "./lib/upload-file";
 import { PromptButtons } from "./PromptButton";
-import { ChatMsg } from "./types";
 
 export function MiddleSection() {
   const {
     msgs,
     setMsgs,
-    streaming,
-    setStreaming,
-    files,
-    setFiles,
     inputValue,
     setInputValue,
+    files,
+    setFiles,
+    streaming,
+    setStreaming,
     error,
     setError,
     abortRef,
     scrollRef,
   } = useChatState();
 
-  const { sendMessage, sendNewsSummary } = useChatStream({
+  const { askGPTQuestion, askGPTSummaryNews, askGPTTextToSpeech } = useChatStream({
     msgs,
     setMsgs,
-    files,
-    setFiles,
     inputValue,
     setInputValue,
+    files,
+    setFiles,
     streaming,
     setStreaming,
     abortRef,
@@ -44,7 +43,7 @@ export function MiddleSection() {
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      sendMessage();
+      askGPTQuestion();
     }
   };
 
@@ -81,23 +80,6 @@ export function MiddleSection() {
     }
 
     e.target.value = "";
-  };
-
-  // Handler khi bấm nút Summary News
-  const handleSummaryNewsClick = async (feedKey = "vnexpress") => {
-    if (streaming) return;
-    setError(null);
-
-    const userContent = "Tóm tắt tin tức mới nhất trong ngày";
-    const userMsg: ChatMsg = { role: "user", content: userContent };
-
-    // Append user message immediately to UI
-    const nextMsgs = [...msgs, userMsg];
-    setMsgs(nextMsgs);
-
-    // Call the stream flow that will fetch RSS & call GPT
-    // sendNewsSummary expects providedMsgs array including the user message
-    sendNewsSummary(nextMsgs, feedKey);
   };
 
   return (
@@ -171,7 +153,7 @@ export function MiddleSection() {
               size="sm"
               borderRadius="full"
               disabled={(inputValue.trim() === "" && files.length === 0) || streaming}
-              onClick={sendMessage}
+              onClick={askGPTQuestion}
               variant="solid"
             >
               <EnterIcon fontSize="4xl" />
@@ -180,7 +162,13 @@ export function MiddleSection() {
         </Center>
 
         {/* Prompt buttons */}
-        <PromptButtons onSummaryNews={() => handleSummaryNewsClick("vnexpress")} />
+        <PromptButtons
+          files={files}
+          inputValue={inputValue}
+          streaming={streaming}
+          onSummaryNews={() => askGPTSummaryNews("vnexpress")}
+          onTextToSpeech={askGPTTextToSpeech}
+        />
       </VStack>
     </Center>
   );

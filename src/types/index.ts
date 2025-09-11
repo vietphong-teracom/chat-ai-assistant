@@ -3,7 +3,8 @@ export type Role = "user" | "assistant" | "system";
 export type ChatMsg = {
   role: Role;
   content: string;
-  files?: UploadedFile[]; // Thêm thuộc tính files tùy chọn
+  files?: UploadedFile[];
+  audioUrl?: string;
 };
 
 export interface UploadedFile {

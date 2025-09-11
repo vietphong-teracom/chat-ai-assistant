@@ -1,8 +1,8 @@
-// src/hooks/useChatStream.ts
-import type { ChatMsg, UploadedFile } from "@/types";
-import { askGPT } from "@/lib/GPT";
+import type { ChatMsg, Role, UploadedFile } from "@/types";
 import { fetchTopArticlesText } from "@/lib/fetchRss";
-import { getFeedUrl } from "@/helper/getFeedUrl";
+import { askGPT } from "@/lib/gpt/QaA";
+import { generateTTS } from "@/lib/gpt/textToSpeech";
+import { getRssFeed } from "@/helper/getRssFeed";
 
 interface UseChatStreamProps {
   msgs: ChatMsg[];
@@ -17,8 +17,6 @@ interface UseChatStreamProps {
   setError: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-/** sendMessage: send theo inputValue + files (chat bình thường) */
-
 export function useChatStream({
   msgs,
   setMsgs,
@@ -31,9 +29,20 @@ export function useChatStream({
   abortRef,
   setError,
 }: UseChatStreamProps) {
-  const sendMessage = async () => {
-    if ((!inputValue.trim() && files.length === 0) || streaming) return;
+  const assistantEmptyMessage = { role: "assistant" as Role, content: "" };
+  const appendStreamingData = (delta: string) => {
+    setMsgs((prev) => {
+      const copy = [...prev];
+      const last = copy[copy.length - 1];
+      if (last?.role === "assistant") {
+        copy[copy.length - 1] = { ...last, content: (last.content || "") + delta };
+      }
+      return copy;
+    });
+  };
 
+  const askGPTQuestion = async () => {
+    if ((!inputValue && files.length === 0) || streaming) return;
     const newUserMessage: ChatMsg = {
       role: "user",
       content: inputValue,
@@ -46,11 +55,9 @@ export function useChatStream({
         uploading: f.uploading ?? false,
       })),
     };
-
-    const nextMsgs = [...msgs, newUserMessage];
+    // append user message and assistantEmptyMessage
+    const nextMsgs = [...msgs, newUserMessage, assistantEmptyMessage];
     setMsgs(nextMsgs);
-
-    // Reset input + file list
     setInputValue("");
     setFiles([]);
     setStreaming(true);
@@ -60,22 +67,8 @@ export function useChatStream({
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // Thêm message rỗng của assistant để append stream
-    setMsgs((prev) => [...prev, { role: "assistant", content: "" }]);
-
-    const onDelta = (delta: string) => {
-      setMsgs((prev) => {
-        const copy = [...prev];
-        const last = copy[copy.length - 1];
-        if (last?.role === "assistant") {
-          copy[copy.length - 1] = { ...last, content: last.content + delta };
-        }
-        return copy;
-      });
-    };
-
     try {
-      await askGPT(nextMsgs, onDelta, files, controller.signal);
+      await askGPT(nextMsgs, appendStreamingData, files, controller.signal);
     } catch (err: any) {
       console.error("Chat stream error:", err);
       setError(err.message || "Có lỗi xảy ra, vui lòng thử lại.");
@@ -85,69 +78,85 @@ export function useChatStream({
     }
   };
 
-  async function sendNewsSummary(providedMsgs: ChatMsg[], feedKey: string) {
+  async function askGPTSummaryNews(feedKey = "vnexpress") {
     if (streaming) return;
+
+    const userPrompt = "Cập nhật tin tức mới nhất trong ngày";
+    const userMsg: ChatMsg = { role: "user", content: userPrompt };
+
+    // append user message and assistantEmptyMessage
+    const nextMsgs = [...msgs, userMsg];
+    setMsgs(nextMsgs);
+    setStreaming(true);
     setError(null);
 
-    const feedUrl = getFeedUrl(feedKey);
+    // Tạo AbortController
     const controller = new AbortController();
     abortRef.current = controller;
 
-    // Validate last user message exists
-    const lastMsg = providedMsgs[providedMsgs.length - 1];
-    if (!lastMsg || lastMsg.role !== "user") {
-      setError("Internal: expected last message to be user message");
-      return;
-    }
-
-    setStreaming(true);
-
-    // Add a temporary assistant message to show progress
-    setMsgs((prev) => [...prev, { role: "assistant", content: "Đang lấy tin từ nguồn..." }]);
-
     try {
       // 1) fetch feed as text (top N articles)
-      const feedText = await fetchTopArticlesText(feedUrl, 5, controller.signal);
+      const feedUrl = getRssFeed(feedKey);
+      const feedText = await fetchTopArticlesText(feedUrl, 10, controller.signal);
 
       // 2) construct final user content (we do NOT show the full feedText in UI to keep it clean)
-      const finalUserContent = `Nguồn: ${feedUrl}\n\n${feedText}\n\nYêu cầu: ${lastMsg.content}`;
+      const finalUserContent = `Nguồn: ${feedUrl}\n\n${feedText}\n\nYêu cầu: ${userPrompt}`;
 
       // 3) prepare messages for API: replace last user message with enriched content
-      const msgsForApi: ChatMsg[] = [...providedMsgs.slice(0, -1), { ...lastMsg, content: finalUserContent }];
+      const msgsForApi: ChatMsg[] = [...nextMsgs.slice(0, -1), { ...userMsg, content: finalUserContent }];
 
-      // remove temporary assistant progress message we just appended
-      setMsgs((prev) => prev.slice(0, Math.max(0, prev.length - 1)));
-
-      // append assistant placeholder (empty) for streaming results
+      // Thêm message rỗng của assistant để khi có res thì append stream sau
       setMsgs((prev) => [...prev, { role: "assistant", content: "" }]);
 
-      // callback to append deltas to last assistant message
-      const onDelta = (delta: string) => {
-        setMsgs((prev) => {
-          const copy = [...prev];
-          const last = copy[copy.length - 1];
-          if (last?.role === "assistant") {
-            copy[copy.length - 1] = { ...last, content: (last.content || "") + delta };
-          }
-          return copy;
-        });
-      };
-
       // 4) call the GPT streaming API
-      await askGPT(msgsForApi, onDelta, [], controller.signal);
+      await askGPT(msgsForApi, appendStreamingData, [], controller.signal);
       setError(null);
     } catch (err: any) {
       if (err?.name === "AbortError") setError("Đã hủy truy vấn.");
       else setError(err?.message ?? "Lỗi khi lấy/tóm tắt tin tức");
       console.error("sendNewsSummary error:", err);
-
-      // remove the temporary assistant entry if it exists
-      setMsgs((prev) => prev.slice(0, Math.max(0, prev.length - 1)));
     } finally {
       setStreaming(false);
       abortRef.current = null;
     }
   }
 
-  return { sendMessage, sendNewsSummary };
+  async function askGPTTextToSpeech() {
+    if ((!inputValue && files.length === 0) || streaming) return;
+
+    const userPrompt = inputValue ? "Đọc đoạn văn bản sau" : "Đọc văn bản tài liệu sau";
+    const finalUserContent = `${userPrompt}: \n\n${inputValue}`;
+
+    const userMsg: ChatMsg = { role: "user", content: finalUserContent };
+
+    // Append user message immediately to UI
+    const nextMsgs = [...msgs, userMsg];
+    setMsgs(nextMsgs);
+    setInputValue("");
+
+    setStreaming(true);
+    setError(null);
+
+    // ✅ Thêm assistant message placeholder để hiển thị ThinkingMessage
+    setMsgs((prev) => [...prev, { role: "assistant", content: "" }]);
+    try {
+      const url = await generateTTS(inputValue);
+      // Cập nhật lại message cuối cùng với audioUrl
+      setMsgs((prev) => {
+        const copy = [...prev];
+        const last = copy[copy.length - 1];
+        if (last?.role === "assistant") {
+          copy[copy.length - 1] = { ...last, audioUrl: url };
+        }
+        return copy;
+      });
+    } catch (err: any) {
+      console.error("sendTextToSpeech error:", err);
+      setError(err?.message || "Không thể tạo audio từ văn bản.");
+    } finally {
+      setStreaming(false);
+    }
+  }
+
+  return { askGPTQuestion, askGPTSummaryNews, askGPTTextToSpeech };
 }

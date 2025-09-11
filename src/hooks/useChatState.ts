@@ -1,4 +1,3 @@
-// src/hooks/useChatState.ts
 import { useRef, useState, useEffect } from "react";
 import type { ChatMsg, UploadedFile } from "@/types";
 
@@ -6,9 +5,10 @@ export function useChatState() {
   const [msgs, setMsgs] = useState<ChatMsg[]>([
     { role: "system", content: "Bạn là trợ lý hữu ích, trả lời ngắn gọn, rõ ràng." },
   ]);
-  const [streaming, setStreaming] = useState(false);
-  const [files, setFiles] = useState<UploadedFile[]>([]);
   const [inputValue, setInputValue] = useState("");
+  const [files, setFiles] = useState<UploadedFile[]>([]);
+
+  const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
@@ -22,12 +22,12 @@ export function useChatState() {
   return {
     msgs,
     setMsgs,
-    streaming,
-    setStreaming,
-    files,
-    setFiles,
     inputValue,
     setInputValue,
+    files,
+    setFiles,
+    streaming,
+    setStreaming,
     error,
     setError,
     abortRef,

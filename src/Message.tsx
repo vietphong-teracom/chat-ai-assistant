@@ -3,6 +3,7 @@ import { MarkdownMessage } from "./MarkdownMessage";
 import { ThinkingMessage } from "./ThinkingMessage";
 import { FileMessages } from "./FileMessage";
 import { ChatMsg } from "./types";
+import { AudioMessage } from "./AudioMessage";
 
 type MessageProps = {
   msg: ChatMsg;
@@ -11,6 +12,8 @@ type MessageProps = {
 };
 
 export const Message = ({ msg, index, streaming }: MessageProps) => {
+  const showThinking = msg.role === "assistant" && streaming && !msg.content && !msg.audioUrl;
+
   return (
     <Box
       key={index}
@@ -24,12 +27,10 @@ export const Message = ({ msg, index, streaming }: MessageProps) => {
       lineHeight="1.6"
       boxShadow="sm"
     >
-      {msg.content ? (
-        <MarkdownMessage content={msg.content} />
-      ) : msg.role === "assistant" && streaming ? (
-        <ThinkingMessage />
-      ) : null}
-      {msg.files && <FileMessages files={msg.files} />}
+      {showThinking && <ThinkingMessage />}
+      {Boolean(msg.content) && <MarkdownMessage content={msg.content} />}
+      {Boolean(msg.files) && <FileMessages files={msg.files} />}
+      {Boolean(msg.audioUrl) && <AudioMessage audioUrl={msg.audioUrl} />}
     </Box>
   );
 };
