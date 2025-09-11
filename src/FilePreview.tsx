@@ -1,21 +1,20 @@
-import { Box, Flex, IconButton, Spinner, Text, VStack } from '@chakra-ui/react'
-import { getFileMeta } from './helper'
-import { removeFile } from './lib/remove-file-uploaded'
-import { UploadedFile } from './types'
+import { Box, Flex, Text, VStack } from '@chakra-ui/react';
+import { getFileMeta } from './helper';
+import { UploadedFile } from './types';
 
 type FilePreviewProps = {
-  files: UploadedFile[]
-  setFiles: React.Dispatch<React.SetStateAction<UploadedFile[]>>
-}
+  files: UploadedFile[];
+  setFiles: React.Dispatch<React.SetStateAction<UploadedFile[]>>;
+};
 
-export function FilePreview({ files, setFiles }: FilePreviewProps) {
+export function FilePreview({ files }: FilePreviewProps) {
   return (
     <>
       {files.length > 0 && (
         <VStack align='stretch' gap={2}>
           {files.map((file, index) => {
-            const ext = file.fileName.split('.').pop() || ''
-            const { color, icon } = getFileMeta(ext)
+            const ext = file.fileName.split('.').pop() || '';
+            const { color, icon } = getFileMeta(ext);
 
             return (
               <Flex
@@ -69,7 +68,7 @@ export function FilePreview({ files, setFiles }: FilePreviewProps) {
                 </Flex>
 
                 {/* Nếu đang upload → Spinner */}
-                {file.uploading ? (
+                {/* {file.uploading ? (
                   <Spinner size='sm' color='blue.500' />
                 ) : (
                   <IconButton
@@ -80,12 +79,12 @@ export function FilePreview({ files, setFiles }: FilePreviewProps) {
                   >
                     ✕
                   </IconButton>
-                )}
+                )} */}
               </Flex>
-            )
+            );
           })}
         </VStack>
       )}
     </>
-  )
+  );
 }

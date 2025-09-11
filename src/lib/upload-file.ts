@@ -1,14 +1,14 @@
-import { UploadedFile } from "@/types";
-import { SetStateAction } from "react";
+import { UploadedFile } from '@/types';
+import { SetStateAction } from 'react';
 
 const API_KEY = import.meta.env.VITE_OPENAI_API_KEY as string;
 const API_URL = import.meta.env.VITE_OPENAI_API_URL as string;
 
 if (!API_KEY) {
-  throw new Error("Missing VITE_OPENAI_API_KEY in environment variables");
+  throw new Error('Missing VITE_OPENAI_API_KEY in environment variables');
 }
 if (!API_URL) {
-  throw new Error("Missing VITE_OPENAI_API_URL in environment variables");
+  throw new Error('Missing VITE_OPENAI_API_URL in environment variables');
 }
 
 type UploadFileProp = {
@@ -20,18 +20,18 @@ type UploadFileProp = {
 export const uploadFile = async ({ formData, setFiles, previewUrl }: UploadFileProp) => {
   try {
     const res = await fetch(`${API_URL}/files`, {
-      method: "POST",
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${API_KEY}`,
       },
       body: formData,
     });
 
-    if (!res.ok) throw new Error("Upload failed");
+    if (!res.ok) throw new Error('Upload failed');
     return await res.json();
   } catch (err) {
-    console.error("Error uploading file:", err);
-    setFiles((prev) => prev.filter((f) => f.previewUrl !== previewUrl));
+    console.error('Error uploading file:', err);
+    setFiles((prev) => prev.filter((f) => f.filePreviewUrl !== previewUrl));
   }
 };
 
@@ -46,19 +46,19 @@ export async function handleFileUpload(
     const previewUrl = URL.createObjectURL(file);
 
     // Add vào state (uploading)
-    setFiles((prev) => [...prev, { name: file.name, size: file.size, type: file.type, previewUrl, uploading: true }]);
+    //setFiles((prev) => [...prev, { name: file.name, size: file.size, type: file.type, previewUrl, uploading: true }]);
 
     // Upload lên OpenAI
     const formData = new FormData();
-    formData.append("file", file);
-    formData.append("purpose", "assistants");
+    formData.append('file', file);
+    formData.append('purpose', 'assistants');
 
     const data = await uploadFile({ formData, setFiles, previewUrl });
 
     setFiles((prev) =>
-      prev.map((f) => (f.previewUrl === previewUrl ? { ...f, fileId: data.id, uploading: false } : f))
+      prev.map((f) => (f.filePreviewUrl === previewUrl ? { ...f, fileId: data.id, uploading: false } : f))
     );
   }
 
-  e.target.value = "";
+  e.target.value = '';
 }
