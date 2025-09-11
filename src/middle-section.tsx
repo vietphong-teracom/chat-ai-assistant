@@ -59,7 +59,7 @@ export function MiddleSection() {
       fileSize: file.size,
       fileType: file.type,
       filePreviewUrl: URL.createObjectURL(file),
-      filePrompt: FilePurpose.SUMMARY,
+      filePrompt: QuickPrompt.SUMMARY,
     }));
     setFiles(fileInfoList);
     e.target.value = '';
