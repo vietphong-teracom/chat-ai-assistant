@@ -49,10 +49,6 @@ async function fetchChatResponse(body: object, signal?: AbortSignal): Promise<Re
     signal,
   });
 
-  // if (!res.ok) {
-  //   const errText = await res.text();
-  //   throw new Error(`OpenAI API error: ${errText}`);
-  // }
   if (!res.ok) {
     let errMsg = `Request failed: ${res.status}`;
     try {
@@ -70,7 +66,7 @@ async function fetchChatResponse(body: object, signal?: AbortSignal): Promise<Re
 /**
  * Xử lý stream dữ liệu từ API, parse JSON từng dòng, gọi callback với delta text
  */
-async function handleStream(res: Response, onDelta: (delta: string) => void) {
+async function handleStream(res: Response, appendData: (delta: string) => void) {
   if (!res.body) return;
 
   const reader = res.body.getReader();
@@ -91,7 +87,7 @@ async function handleStream(res: Response, onDelta: (delta: string) => void) {
       try {
         const evt = JSON.parse(jsonStr);
         if (evt.type === "response.output_text.delta" && evt.delta) {
-          onDelta(evt.delta);
+          appendData(evt.delta);
         }
       } catch (err) {
         console.warn("Failed to parse delta:", err);
@@ -105,7 +101,7 @@ async function handleStream(res: Response, onDelta: (delta: string) => void) {
  */
 export async function askGPT(
   messages: ChatMsg[],
-  onDelta: (delta: string) => void,
+  appendData: (delta: string) => void,
   files: UploadedFile[] = [],
   signal?: AbortSignal
 ) {
@@ -119,5 +115,5 @@ export async function askGPT(
 
   const res = await fetchChatResponse(body, signal);
 
-  await handleStream(res, onDelta);
+  await handleStream(res, appendData);
 }
