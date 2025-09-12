@@ -1,7 +1,6 @@
 import { Box, Center, Flex, Heading, IconButton, VStack } from '@chakra-ui/react';
 import { useRef, type KeyboardEvent, type SetStateAction } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
-import '../src/lib/index.css';
 import { Conversation } from './Conversation';
 import { FilePreview } from './FilePreview';
 import { useChatState } from './hooks/useChatState';
@@ -11,7 +10,7 @@ import { PromptButtons } from './PromptButton';
 import { QuickPrompt } from './types';
 import { VoiceRecorder } from './VoiceRecorder';
 
-export function MiddleSection() {
+export function ChatSection() {
   const {
     msgs,
     setMsgs,
@@ -90,95 +89,84 @@ export function MiddleSection() {
   };
 
   return (
-    <Center flex='1' bg='#9ca3af38'>
-      <VStack gap='6' w='100%'>
-        <Heading size='3xl' mb={2}>
-          Tôi có thể giúp gì cho bạn?
-        </Heading>
+    <VStack gap='6' w='100%'>
+      <Heading size='3xl' mb={2}>
+        Tôi có thể giúp gì cho bạn?
+      </Heading>
 
-        {/* Conversation */}
-        <Center w='100%'>
-          <Conversation msgs={msgs} streaming={streaming} error={error} scrollRef={scrollRef} />
-        </Center>
+      {/* Conversation */}
+      <Center w='100%'>
+        <Conversation msgs={msgs} streaming={streaming} error={error} scrollRef={scrollRef} />
+      </Center>
 
-        {/* Input */}
-        <Center w='100%'>
-          <Flex
-            maxW='768px'
-            w='100%'
-            borderRadius='3xl'
-            border='1px solid #ccc'
-            p={2}
-            align='center'
-            gap={2}
-            bg='white'
-          >
-            {/* Upload */}
-            <Box w='40px' flexShrink={0}>
-              <input type='file' id='file-input' style={{ display: 'none' }} multiple onChange={handleSelectForInput} />
-              <label htmlFor='file-input'>
-                <IconButton
-                  aria-label='Upload file'
-                  size='sm'
-                  borderRadius='full'
-                  variant='ghost'
-                  as='span'
-                  w='100%'
-                  h='100%'
-                >
-                  <UploadIcon fontSize='2xl' />
-                </IconButton>
-              </label>
-            </Box>
+      {/* Input */}
+      <Center w='100%'>
+        <Flex maxW='768px' w='100%' borderRadius='3xl' border='1px solid #ccc' p={2} align='center' gap={2} bg='white'>
+          {/* Upload */}
+          <Box w='40px' flexShrink={0}>
+            <input type='file' id='file-input' style={{ display: 'none' }} multiple onChange={handleSelectForInput} />
+            <label htmlFor='file-input'>
+              <IconButton
+                aria-label='Upload file'
+                size='sm'
+                borderRadius='full'
+                variant='ghost'
+                as='span'
+                w='100%'
+                h='100%'
+              >
+                <UploadIcon fontSize='2xl' />
+              </IconButton>
+            </label>
+          </Box>
 
-            {/* Files Preview + textarea */}
-            <VStack flex='1' align='stretch' gap={1}>
-              <FilePreview files={files} setFiles={setFiles} />
-              <TextareaAutosize
-                minRows={1}
-                maxRows={5}
-                placeholder='Vui lòng nhập yêu cầu'
-                value={inputValue}
-                onChange={(e: { target: { value: SetStateAction<string> } }) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyDown}
-                style={{
-                  width: '100%',
-                  borderRadius: '24px',
-                  padding: '6px 10px',
-                  resize: 'none',
-                  border: 'none',
-                  outline: 'none',
-                  background: 'transparent',
-                }}
-              />
-            </VStack>
-
-            {/* input file cho Đọc Văn Bản */}
-            <input
-              type='file'
-              accept='.pdf, .mp3, .mp4, application/pdf, audio/mpeg, video/mp4'
-              ref={quickPromptInputRef}
-              style={{ display: 'none' }}
-              onChange={handleSelectFileForQuickPrompt}
+          {/* Files Preview + textarea */}
+          <VStack flex='1' align='stretch' gap={1}>
+            <FilePreview files={files} setFiles={setFiles} />
+            <TextareaAutosize
+              minRows={1}
+              maxRows={5}
+              placeholder='Vui lòng nhập yêu cầu'
+              value={inputValue}
+              onChange={(e: { target: { value: SetStateAction<string> } }) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              style={{
+                width: '100%',
+                borderRadius: '24px',
+                padding: '6px 10px',
+                resize: 'none',
+                border: 'none',
+                outline: 'none',
+                background: 'transparent',
+              }}
             />
-            <VoiceRecorder setInputValue={setInputValue} setError={setError} />
-            {/* Send */}
-            <IconButton
-              aria-label='Send message'
-              size='sm'
-              borderRadius='full'
-              disabled={(inputValue.trim() === '' && files.length === 0) || streaming}
-              onClick={chatQaA}
-              variant='solid'
-            >
-              <EnterIcon fontSize='4xl' />
-            </IconButton>
-          </Flex>
-        </Center>
+          </VStack>
 
-        {/* Prompt buttons */}
-        <PromptButtons onTriggerQuickPrompt={triggerSelectFile} onSummaryNews={summaryNews} />
-      </VStack>
-    </Center>
+          {/* input file cho Đọc Văn Bản */}
+          <input
+            type='file'
+            accept='.pdf, .mp3, .mp4, application/pdf, audio/mpeg, video/mp4'
+            ref={quickPromptInputRef}
+            style={{ display: 'none' }}
+            onChange={handleSelectFileForQuickPrompt}
+          />
+          <VoiceRecorder setInputValue={setInputValue} setError={setError} />
+          {/* Send */}
+          <IconButton
+            aria-label='Send message'
+            size='sm'
+            borderRadius='full'
+            disabled={(inputValue.trim() === '' && files.length === 0) || streaming}
+            onClick={chatQaA}
+            variant='solid'
+          >
+            <EnterIcon fontSize='4xl' />
+          </IconButton>
+        </Flex>
+      </Center>
+
+      {/* Prompt buttons */}
+      <PromptButtons onTriggerQuickPrompt={triggerSelectFile} onSummaryNews={summaryNews} />
+    </VStack>
   );
 }
