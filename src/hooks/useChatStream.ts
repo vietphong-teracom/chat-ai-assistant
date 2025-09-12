@@ -208,7 +208,7 @@ export function useChatStream({
     }
   };
 
-  async function summaryNews(feedKey = 'vnexpress') {
+  async function summaryNews(feedKey = 'thanhnien') {
     if (streaming) return;
 
     const userTyped = 'Cập nhật tin tức mới nhất trong ngày';
