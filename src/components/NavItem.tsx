@@ -17,7 +17,8 @@ export function NavItem({ to, children, ...props }: NavItemProps) {
           borderRadius='lg'
           w='100%'
           whiteSpace='nowrap'
-          bg={isActive ? '#ef4444' : 'gray.500'} // 👈 active thì xám, bình thường thì xanh
+          bg={isActive ? '#ef4444' : 'gray.500'}
+          fontWeight={isActive ? '600' : '500'}
           color='white'
           _hover={{ opacity: 0.9 }}
           {...props}

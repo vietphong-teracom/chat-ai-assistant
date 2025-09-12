@@ -16,7 +16,7 @@ interface GuideItem {
 // Ví dụ: public/images/capnhattintuc.png
 const guideData: GuideItem[] = [
   {
-    title: '1.Chức năng hỏi đáp thông thường',
+    title: '1. Chức năng hỏi đáp thông thường',
     blocks: [
       {
         description: 'Người dùng có thể hỏi thông tin về mọi thứ ',
@@ -25,7 +25,7 @@ const guideData: GuideItem[] = [
     ],
   },
   {
-    title: '2.Chức năng cập nhật tin tức',
+    title: '2. Chức năng cập nhật tin tức mới nhất',
     blocks: [
       {
         description: 'Bấm vào nút Cập nhật tin tức, lúc này sẽ cập nhật được tin tức từ các trang bài báo',
@@ -34,7 +34,7 @@ const guideData: GuideItem[] = [
     ],
   },
   {
-    title: '3.Chức năng tóm tắt văn bản',
+    title: '3. Chức năng tóm tắt nhanh văn bản',
     blocks: [
       {
         description:
@@ -48,7 +48,7 @@ const guideData: GuideItem[] = [
     ],
   },
   {
-    title: '4. Tóm tắt văn bản theo dàn ý mình mong muốn',
+    title: '4. Chức năng tóm tắt văn bản theo dàn ý mình mong muốn',
     blocks: [
       {
         description:
@@ -58,7 +58,7 @@ const guideData: GuideItem[] = [
     ],
   },
   {
-    title: '5.Chức năng đọc văn bản',
+    title: '5. Chức năng hỗ trợ đọc văn bản',
     blocks: [
       {
         description:
@@ -71,7 +71,7 @@ const guideData: GuideItem[] = [
     ],
   },
   {
-    title: '6.Chức năng hỗ trợ người dùng nói và hiển thị chữ trên ô nhập',
+    title: '6. Chức năng ra hiệu lệnh bằng giọng nói',
     blocks: [
       {
         description:
@@ -90,7 +90,7 @@ const guideData: GuideItem[] = [
     ],
   },
   {
-    title: '7.Chức năng chuyển file âm thanh thành văn bản ',
+    title: '7. Chức năng chuyển file âm thanh thành văn bản ',
     blocks: [
       {
         description: 'Bấm vào nút bấm Chuyển âm thanh thành văn bản , lúc này hãy tải file mp3 , mp4 lên ',
@@ -104,7 +104,7 @@ const guideData: GuideItem[] = [
     ],
   },
   {
-    title: '8.Yêu cầu Trợ lý ảo tiếp tục chỉnh sửa bài phát biểu theo ý mình ',
+    title: '8. Chức năng yêu cầu trợ lý ảo tiếp tục chỉnh sửa bài phát biểu theo ý mình',
     blocks: [
       {
         description: '1.Gửi đoạn phát biếu và có thể hỏi trợ lý ',
@@ -118,7 +118,7 @@ const guideData: GuideItem[] = [
     ],
   },
   {
-    title: '9.Dịch thuật tài liệu tiếng Việt sang tiếng Anh & các thứ tiếng khác, và ngược lại',
+    title: '9. Chức năng dịch thuật tài liệu tiếng Việt sang tiếng Anh & các thứ tiếng khác, và ngược lại',
     blocks: [
       {
         description: 'Gửi file cần dịch tài liệu và bên dưới là đoạn văn đã được dịch',
@@ -127,7 +127,7 @@ const guideData: GuideItem[] = [
     ],
   },
   {
-    title: 'Đã dặn dò Trợ lí ảo ',
+    title: '10. Các quy tắc đã được cài sẵn (dặn dò) trợ lý ảo ',
     blocks: [
       {
         description: ' 1. Luôn sử dụng văn phong lịch sự, chuyên nghiệp.',
