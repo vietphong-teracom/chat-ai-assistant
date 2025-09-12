@@ -1,10 +1,9 @@
 import { Box, HStack } from '@chakra-ui/react';
 import { GrDocumentSound } from 'react-icons/gr';
-import '../src/lib/index.css';
 import { Button } from './components/ui/button';
-import { FiFileText, FiMic } from 'react-icons/fi';
+import { FiFileText } from 'react-icons/fi';
 import { QuickPrompt } from './types';
-import { FaRegNewspaper } from 'react-icons/fa';
+import { FaRegFileAudio, FaRegNewspaper } from 'react-icons/fa';
 
 interface PromptButtonProps {
   icon?: React.ReactElement;
@@ -46,7 +45,7 @@ export function PromptButtons({ onTriggerQuickPrompt, onSummaryNews }: PromptBut
       />
 
       <PromptButton
-        icon={<FiMic color='#6B46C1' fontSize='lg' />}
+        icon={<FaRegFileAudio color='#3a7fec' fontSize='lg' />}
         description='Chuyển Âm Thanh Thành Văn Bản'
         onClick={() => onTriggerQuickPrompt(QuickPrompt.STT)}
       />
