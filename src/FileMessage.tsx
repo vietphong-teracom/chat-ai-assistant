@@ -1,5 +1,4 @@
 import { Box, Flex, Text, VStack } from '@chakra-ui/react';
-import '../src/lib/index.css';
 import { getFileMeta } from './helper';
 import { UploadedFile } from './types';
 

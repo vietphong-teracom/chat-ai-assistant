@@ -1,10 +1,10 @@
-import { Box, Center } from "@chakra-ui/react";
+import { Box, Center } from '@chakra-ui/react';
 
 export function BottomSection() {
   return (
-    <Box pb="2" mt={4} mb={1}>
-      <Center fontSize="xs" color="fg.muted">
-        ChatGPT can make mistakes. Check important info.
+    <Box pb='1' mt={1} mb={1}>
+      <Center fontSize='xs' color='fg.muted'>
+        Chatbot đóng vài trò là một trợ lý hỗ trợ. Không phải là nguồn chính xác tuyệt đối.
       </Center>
     </Box>
   );

@@ -1,24 +1,34 @@
-import { Box, Flex, Stack } from "@chakra-ui/react";
-import { MiddleSection } from "./middle-section";
-import { Sidebar } from "./sidebar";
-import { SidebarProvider } from "./sidebar-context";
-import { TopSection } from "./top-section";
+import { Box, Flex, Stack } from '@chakra-ui/react';
+import { Sidebar } from './sidebar';
+import { SidebarProvider } from './sidebar-context';
+import { TopSection } from './top-section';
+import { BottomSection } from './bottom-section';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { ChatPage } from './pages/ChatPage';
+import { GuidePage } from './pages/GuidePage';
+import './styles/index.css';
 
 function App() {
   return (
-    <SidebarProvider>
-      <Flex minH="100dvh">
-        <Sidebar />
-
-        <Box flex="1">
-          <Stack h="full">
-            <TopSection />
-            <MiddleSection />
-            {/* <BottomSection /> */}
-          </Stack>
-        </Box>
-      </Flex>
-    </SidebarProvider>
+    <BrowserRouter>
+      <SidebarProvider>
+        <Flex minH='100dvh'>
+          <Sidebar />
+          <Box flex='1'>
+            <Stack h='full'>
+              <TopSection />
+              <Box flex='1' overflow='auto'>
+                <Routes>
+                  <Route path='/' element={<ChatPage />} />
+                  <Route path='/guide' element={<GuidePage />} />
+                </Routes>
+              </Box>
+              <BottomSection />
+            </Stack>
+          </Box>
+        </Flex>
+      </SidebarProvider>
+    </BrowserRouter>
   );
 }
 
