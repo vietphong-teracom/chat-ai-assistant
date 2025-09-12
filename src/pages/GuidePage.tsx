@@ -20,7 +20,7 @@ const guideData: GuideItem[] = [
     blocks: [
       {
         description: 'Người dùng có thể hỏi thông tin về mọi thứ ',
-        images: ['src/images/Hoidapthongthuong.png'],
+        images: ['/images/Hoidapthongthuong.png'],
       },
     ],
   },
@@ -29,7 +29,7 @@ const guideData: GuideItem[] = [
     blocks: [
       {
         description: 'Bấm vào nút Cập nhật tin tức, lúc này sẽ cập nhật được tin tức từ các trang bài báo',
-        images: ['src/images/capnhattintuc1.png'],
+        images: ['/images/capnhattintuc1.png'],
       },
     ],
   },
@@ -39,11 +39,11 @@ const guideData: GuideItem[] = [
       {
         description:
           'Có thể chọn nhanh bằng việc bấm vào nút bấm Tóm Tắt Văn Bản bên dưới ô nhập để chọn file cần được tóm tắt (Lưu ý hiện tại chỉ đang hỗ trợ file PDF)',
-        images: ['src/images/tomtatvanban.png'],
+        images: ['/images/tomtatvanban.png'],
       },
       {
         description: 'Bên dưới là văn bản chưa tóm tắt )',
-        images: ['src/images/vanbanchuatomtat.png'],
+        images: ['/images/vanbanchuatomtat.png'],
       },
     ],
   },
@@ -53,7 +53,7 @@ const guideData: GuideItem[] = [
       {
         description:
           'Có thể chọn file ở nút chọn file bên trái ô input , sau khi chọn file có thể nhập input là tóm tắt theo dàn ý mà mình mong muốn, dịch văn bản ....)',
-        images: ['src/images/dichtienganhvatomtat.png'],
+        images: ['/images/dichtienganhvatomtat.png'],
       },
     ],
   },
@@ -63,7 +63,7 @@ const guideData: GuideItem[] = [
       {
         description:
           'Chọn chức năng đọc văn bản bằng nút bấm Chuyển Âm Thanh Thành Văn Bản bên dưới ô nhập , sau khi nhập có thể chọn file (hiện tại chỉ đang hỗ trợ file pdf))',
-        images: ['src/images/chuyendoitextthanhvanban.png'],
+        images: ['/images/chuyendoitextthanhvanban.png'],
       },
       {
         description: 'Sau khi tạo ra xong có thể bấm nghe trực tiếp )',
@@ -76,16 +76,16 @@ const guideData: GuideItem[] = [
       {
         description:
           'Bấm vào biêủ tưởng icon Mic bên cạnh nút Gửi lúc này sẽ bắt đầu ghi âm ,người dùng nói những điều cần hỏi',
-        images: ['src/images/batmic.png'],
+        images: ['/images/batmic.png'],
       },
 
       {
         description: 'Sau khi nói xong có thể bấm dừng ở nút dừng lại để hoàn thiện',
-        images: ['src/images/tatmic.png'],
+        images: ['/images/tatmic.png'],
       },
       {
         description: 'Lúc này chữ nói đã hiển thị trên ô nhập input , giúp người dùng không cần gõ tay',
-        images: ['src/images/hienthichutreninput.png'],
+        images: ['/images/hienthichutreninput.png'],
       },
     ],
   },
@@ -94,12 +94,12 @@ const guideData: GuideItem[] = [
     blocks: [
       {
         description: 'Bấm vào nút bấm Chuyển âm thanh thành văn bản , lúc này hãy tải file mp3 , mp4 lên ',
-        images: ['src/images/chonfile.png'],
+        images: ['/images/chonfile.png'],
       },
 
       {
         description: 'Sau khi chọn file xong thì sẽ có bản text lấy ra từ audio bạn đã gửi',
-        images: ['src/images/chuyenaudiothanhvanban.png'],
+        images: ['/images/chuyenaudiothanhvanban.png'],
       },
     ],
   },
@@ -108,12 +108,12 @@ const guideData: GuideItem[] = [
     blocks: [
       {
         description: '1.Gửi đoạn phát biếu và có thể hỏi trợ lý ',
-        images: ['src/images/123.png'],
+        images: ['/images/123.png'],
       },
 
       {
         description: '',
-        images: ['src/images/1234.png'],
+        images: ['/images/1234.png'],
       },
     ],
   },
@@ -122,7 +122,7 @@ const guideData: GuideItem[] = [
     blocks: [
       {
         description: 'Gửi file cần dịch tài liệu và bên dưới là đoạn văn đã được dịch',
-        images: ['src/images/dichtailieu.png'],
+        images: ['/images/dichtailieu.png'],
       },
     ],
   },
