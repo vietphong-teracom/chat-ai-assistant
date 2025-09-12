@@ -2,9 +2,9 @@ import { Box, Center } from '@chakra-ui/react';
 
 export function BottomSection() {
   return (
-    <Box pb='1' mt={1} mb={1} py={1} bg={'#F6F6F6'}>
+    <Box mb={1} pt={2} bg={'#F6F6F6'}>
       <Center fontSize='xs' color='fg.muted'>
-        Chatbot đóng vài trò là một trợ lý hỗ trợ. Không phải là nguồn chính xác tuyệt đối.
+        Chatbot chỉ đóng vai trò như một trợ lý hỗ trợ. Không phải là nguồn chính xác tuyệt đối.
       </Center>
     </Box>
   );
