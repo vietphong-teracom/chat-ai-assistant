@@ -4,6 +4,7 @@ export enum QuickPrompt {
   SUMMARY = 'summary',
   TRANSLATION = 'translation',
   TTS = 'tts',
+  STT = 'stt',
 }
 
 export type ChatMsg = {
