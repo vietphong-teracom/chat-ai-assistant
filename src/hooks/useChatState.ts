@@ -2,9 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import type { ChatMsg, QuickPrompt, UploadedFile } from '@/types';
 
 export function useChatState() {
-  const [msgs, setMsgs] = useState<ChatMsg[]>([
-    { role: 'system', content: 'Bạn là trợ lý hữu ích, trả lời ngắn gọn, rõ ràng.' },
-  ]);
+  const [msgs, setMsgs] = useState<ChatMsg[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [files, setFiles] = useState<UploadedFile[]>([]);
   const [quickPrompt, setQuickPrompt] = useState<QuickPrompt | null>(null);

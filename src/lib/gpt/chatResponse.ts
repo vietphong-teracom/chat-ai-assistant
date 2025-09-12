@@ -16,6 +16,7 @@ const RULE_SYSTEM_MESSAGE: ChatMsg = {
 2. Không chèn thông tin không xác thực.
 3. Tránh dùng từ ngữ tiêu cực hoặc gây hiểu nhầm.
 4. Luôn giữ cấu trúc rõ ràng, dễ hiểu.
+5. Chỉ trả lời trọng tâm câu hỏi gần nhất. Không cần trả lời lại những câu hỏi cũ ở trên.
 ---`,
 };
 /**
@@ -113,7 +114,7 @@ async function handleStream(res: Response, appendData: (delta: string) => void) 
 export async function callAPIGPT(messages: ChatMsg[], appendData: (delta: string) => void, signal?: AbortSignal) {
   const input = buildInput(messages);
   const body = {
-    model: 'gpt-4',
+    model: 'gpt-5',
     input,
     stream: true,
   };
