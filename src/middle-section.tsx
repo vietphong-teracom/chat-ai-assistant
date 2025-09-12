@@ -9,6 +9,7 @@ import { useChatStream } from './hooks/useChatStream';
 import { EnterIcon, UploadIcon } from './icons/other-icons';
 import { PromptButtons } from './PromptButton';
 import { QuickPrompt } from './types';
+import { VoiceRecorder } from './VoiceRecorder';
 
 export function MiddleSection() {
   const {
@@ -28,7 +29,7 @@ export function MiddleSection() {
     setQuickPrompt,
   } = useChatState();
 
-  const { chatQaA, summaryDocument, ttsDocument, summaryNews } = useChatStream({
+  const { chatQaA, summaryDocument, ttsDocument, summaryNews, sttDocument } = useChatStream({
     msgs,
     setMsgs,
     inputValue,
@@ -75,6 +76,9 @@ export function MiddleSection() {
     }
     if (quickPrompt === QuickPrompt.TTS) {
       ttsDocument(file);
+    }
+    if (quickPrompt === QuickPrompt.STT) {
+      sttDocument(file);
     }
 
     e.target.value = '';
@@ -152,11 +156,12 @@ export function MiddleSection() {
             {/* input file cho Đọc Văn Bản */}
             <input
               type='file'
+              accept='.pdf, .mp3, .mp4, application/pdf, audio/mpeg, video/mp4'
               ref={quickPromptInputRef}
               style={{ display: 'none' }}
               onChange={handleSelectFileForQuickPrompt}
             />
-
+            <VoiceRecorder setInputValue={setInputValue} setError={setError} />
             {/* Send */}
             <IconButton
               aria-label='Send message'

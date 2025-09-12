@@ -28,7 +28,7 @@ export const Message = ({ msg, index, streaming }: MessageProps) => {
       boxShadow='sm'
     >
       {showThinking && <ThinkingMessage />}
-      {Boolean(msg.displayContent) && <MarkdownMessage content={msg.displayContent || msg.content} />}
+      {Boolean(msg.displayContent || msg.content) && <MarkdownMessage content={msg.displayContent || msg.content} />}
       {Boolean(msg.files) && <FileMessages files={msg.files} />}
       {Boolean(msg.audioUrl) && <AudioMessage audioUrl={msg.audioUrl} />}
     </Box>

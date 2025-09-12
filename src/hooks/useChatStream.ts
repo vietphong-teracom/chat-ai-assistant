@@ -3,6 +3,7 @@ import { extractTextFromFile } from '@/helper/extractText';
 import { getRssFeed } from '@/helper/getRssFeed';
 import { fetchTopArticlesText } from '@/lib/fetchRss';
 import { callAPIGPT } from '@/lib/gpt/chatResponse';
+import { generateSTT } from '@/lib/gpt/speechToText';
 import { generateTTS } from '@/lib/gpt/textToSpeech';
 import { QuickPrompt, type ChatMsg, type Role, type UploadedFile } from '@/types';
 
@@ -136,6 +137,7 @@ export function useChatStream({
 
       const url = await generateTTS(fileContent);
       // Cập nhật lại message cuối cùng với audioUrl
+
       setMsgs((prev) => {
         const copy = [...prev];
         const last = copy[copy.length - 1];
@@ -146,7 +148,62 @@ export function useChatStream({
       });
     } catch (err) {
       console.error('Lỗi khi đọc file:', err);
-      setError('Không thể đọc nội dung từ file');
+      setError('Hiện tại chỉ hỗ trợ cho file PDF , k hỗ trợ các file khác');
+    } finally {
+      setStreaming(false);
+      abortRef.current = null;
+    }
+  };
+
+  const sttDocument = async (file: File) => {
+    if (!file || streaming) return;
+
+    try {
+      const displayContent = QUICK_PROMPT[QuickPrompt.STT]; // ✅ prompt mô tả STT
+
+      // Tạo user message từ file âm thanh
+      const userMsg = {
+        role: 'user' as Role,
+        displayContent,
+        content: displayContent, // có thể để trống hoặc mô tả
+        files: [
+          {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+            previewUrl: URL.createObjectURL(file),
+            rawFile: file, // đảm bảo đúng kiểu UploadedFile
+          },
+        ],
+      };
+
+      // Cập nhật UI với user message + placeholder assistant
+      const newMsg = [...msgs, userMsg, assistantEmptyMsg];
+      setMsgs(newMsg);
+      setStreaming(true);
+      setError(null);
+
+      // Tạo AbortController để hủy request khi cần
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      // Gọi API STT để chuyển file audio thành văn bản
+      const text = await generateSTT(file, controller.signal);
+
+      // Cập nhật message cuối cùng (assistant) với text trả về
+      setMsgs((prev) => {
+        const copy = [...prev];
+        const last = copy[copy.length - 1];
+        if (last?.role === 'assistant') {
+          copy[copy.length - 1] = { ...last, content: text, displayContent: text };
+        }
+        return copy;
+      });
+
+      console.log('message', msgs);
+    } catch (err) {
+      console.error('Lỗi khi chuyển giọng nói thành văn bản:', err);
+      setError('Không thể chuyển giọng nói thành văn bản.');
     } finally {
       setStreaming(false);
       abortRef.current = null;
@@ -194,5 +251,5 @@ export function useChatStream({
     }
   }
 
-  return { chatQaA, summaryDocument, ttsDocument, summaryNews };
+  return { chatQaA, summaryDocument, ttsDocument, summaryNews, sttDocument };
 }
