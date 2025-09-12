@@ -1,13 +1,18 @@
-import { Box, Flex, Text, VStack } from '@chakra-ui/react';
+import { Box, Flex, Text, VStack, IconButton } from '@chakra-ui/react';
 import { getFileMeta } from './helper';
 import { UploadedFile } from './types';
+import { CloseIcon } from './icons/other-icons';
 
 type FilePreviewProps = {
   files: UploadedFile[];
   setFiles: React.Dispatch<React.SetStateAction<UploadedFile[]>>;
 };
 
-export function FilePreview({ files }: FilePreviewProps) {
+export function FilePreview({ files, setFiles }: FilePreviewProps) {
+  const removeFile = (index: number) => {
+    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
+  };
+
   return (
     <>
       {files.length > 0 && (
@@ -67,19 +72,15 @@ export function FilePreview({ files }: FilePreviewProps) {
                   </Text>
                 </Flex>
 
-                {/* Nếu đang upload → Spinner */}
-                {/* {file.uploading ? (
-                  <Spinner size='sm' color='blue.500' />
-                ) : (
-                  <IconButton
-                    aria-label='Remove file'
-                    size='xs'
-                    variant='ghost'
-                    onClick={() => removeFile({ files, setFiles, index })}
-                  >
-                    ✕
-                  </IconButton>
-                )} */}
+                <IconButton
+                  aria-label='Remove file'
+                  size='sm'
+                  variant='ghost'
+                  colorScheme='red'
+                  onClick={() => removeFile(index)}
+                >
+                  <CloseIcon />
+                </IconButton>
               </Flex>
             );
           })}

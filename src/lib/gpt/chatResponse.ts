@@ -9,12 +9,23 @@ if (!API_KEY) {
 if (!API_URL) {
   throw new Error('Missing VITE_OPENAI_API_URL in environment variables');
 }
-
+const RULE_SYSTEM_MESSAGE: ChatMsg = {
+  role: 'system',
+  content: `Bạn là trợ lý ảo được dạy theo các nguyên tắc sau:
+1. Luôn sử dụng văn phong lịch sự, chuyên nghiệp.
+2. Không chèn thông tin không xác thực.
+3. Tránh dùng từ ngữ tiêu cực hoặc gây hiểu nhầm.
+4. Luôn giữ cấu trúc rõ ràng, dễ hiểu.
+---`,
+};
 /**
  * Build input messages theo định dạng API yêu cầu
  */
 function buildInput(messages: ChatMsg[]) {
-  return messages
+  // Thêm message system rule ở đầu
+  const allMessages = [RULE_SYSTEM_MESSAGE, ...messages];
+
+  return allMessages
     .filter((m) => m.role === 'user' || m.role === 'system')
     .map((msg) => {
       const content: InputContent[] = [{ type: 'input_text', text: msg.content }];
@@ -102,7 +113,7 @@ async function handleStream(res: Response, appendData: (delta: string) => void) 
 export async function callAPIGPT(messages: ChatMsg[], appendData: (delta: string) => void, signal?: AbortSignal) {
   const input = buildInput(messages);
   const body = {
-    model: 'gpt-5',
+    model: 'gpt-4',
     input,
     stream: true,
   };

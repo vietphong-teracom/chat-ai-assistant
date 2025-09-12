@@ -199,8 +199,6 @@ export function useChatStream({
         }
         return copy;
       });
-
-      console.log('message', msgs);
     } catch (err) {
       console.error('Lỗi khi chuyển giọng nói thành văn bản:', err);
       setError('Không thể chuyển giọng nói thành văn bản.');

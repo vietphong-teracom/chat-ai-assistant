@@ -3,7 +3,7 @@ import { Center } from '@chakra-ui/react';
 
 export function ChatPage() {
   return (
-    <Center flex='1' bg='#9ca3af38'>
+    <Center minH='100vh' w='100%'>
       <ChatSection />
     </Center>
   );
