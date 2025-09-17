@@ -27,7 +27,7 @@ interface PromptButtonsProps {
 }
 export function PromptButtons({ onTriggerQuickPrompt, onSummaryNews }: PromptButtonsProps) {
   return (
-    <HStack gap='4' mt={4}>
+    <HStack gap='4' mt={5} mb={8}>
       <PromptButton
         icon={<FaRegNewspaper color='#ce88f9ff' fontSize='lg' />}
         description='Cập Nhật Tin Tức'

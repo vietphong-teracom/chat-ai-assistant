@@ -13,9 +13,13 @@ export function useChatState() {
   const abortRef = useRef<AbortController | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
+  const forceScroll = () => {
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   // Tự động scroll xuống cuối khi có message mới
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+    forceScroll();
   }, [msgs]);
 
   return {
@@ -33,5 +37,6 @@ export function useChatState() {
     scrollRef,
     quickPrompt,
     setQuickPrompt,
+    forceScroll,
   };
 }

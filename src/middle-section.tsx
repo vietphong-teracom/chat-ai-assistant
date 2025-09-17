@@ -3,12 +3,12 @@ import { useRef, type KeyboardEvent, type SetStateAction } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import { Conversation } from './Conversation';
 import { FilePreview } from './FilePreview';
-import { useChatState } from './hooks/useChatState';
 import { useChatStream } from './hooks/useChatStream';
 import { EnterIcon, UploadIcon } from './icons/other-icons';
 import { PromptButtons } from './PromptButton';
 import { QuickPrompt } from './types';
 import { VoiceRecorder } from './VoiceRecorder';
+import { useChatContext } from './context/chat-context';
 
 export function ChatSection() {
   const {
@@ -26,7 +26,7 @@ export function ChatSection() {
     scrollRef,
     quickPrompt,
     setQuickPrompt,
-  } = useChatState();
+  } = useChatContext();
 
   const { chatQaA, summaryDocument, ttsDocument, summaryNews, sttDocument } = useChatStream({
     msgs,
