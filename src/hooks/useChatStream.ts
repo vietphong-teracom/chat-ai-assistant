@@ -213,7 +213,8 @@ export function useChatStream({
 
     const userTyped = 'Cập nhật tin tức mới nhất trong ngày';
     const userMsg: ChatMsg = { role: 'user', displayContent: userTyped, content: '' };
-    const newMsgs = [...msgs, userMsg];
+    const newMsgs = [...msgs, userMsg, assistantEmptyMsg];
+
     setMsgs(newMsgs);
     setStreaming(true);
     setError(null);
@@ -231,10 +232,11 @@ export function useChatStream({
       const prompt = `Nguồn: ${feedUrl}\n\n${feedText}\n\nYêu cầu: ${userTyped}`;
 
       // 3) prepare messages for API: replace last user message with enriched content
-      const promptMsgs = [...newMsgs.slice(0, -1), { ...userMsg, content: prompt }];
-
-      // Thêm message rỗng của assistant để khi có res thì append stream sau
-      setMsgs([...promptMsgs, { role: 'assistant', content: '' }]);
+      const promptMsgs = [
+        ...newMsgs.slice(0, -2), // giữ các msg trước
+        { ...userMsg, content: prompt }, // enrich lại user msg
+        assistantEmptyMsg, // giữ bot rỗng sẵn có
+      ];
 
       // 4) call the GPT streaming API
       await askGPT(promptMsgs);

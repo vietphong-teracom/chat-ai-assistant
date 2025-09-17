@@ -1,6 +1,6 @@
 import { Box, Heading, Text, Image, VStack } from '@chakra-ui/react';
-import { useState } from 'react';
-import { IoChevronDownCircleOutline } from 'react-icons/io5';
+import { useEffect, useState } from 'react';
+import { IoIosArrowDown } from 'react-icons/io';
 
 interface GuideBlock {
   description: string;
@@ -152,10 +152,21 @@ export function GuidePage() {
     setOpenIndex(openIndex === index ? null : index);
   };
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, []);
+
   return (
-    <Box p={6}>
-      <Heading size='lg' mb={6}>
-        Trang Hướng Dẫn
+    <Box p={6} ml={20}>
+      <Heading
+        as='h1'
+        size='2xl' // chữ to hơn size='lg'
+        mb={6}
+        textAlign='center' // căn giữa
+        fontWeight='extrabold'
+        color='teal.700' // màu nhấn mạnh
+      >
+        Hướng Dẫn Sử Dụng
       </Heading>
 
       {guideData.map((item, index) => (
@@ -171,7 +182,9 @@ export function GuidePage() {
             onClick={() => toggle(index)}
           >
             <Text fontWeight='semibold'>{item.title}</Text>
-            <IoChevronDownCircleOutline transform={openIndex === index ? 'rotate(180deg)' : 'rotate(0deg)'} />
+            <Box transform={openIndex === index ? 'rotate(180deg)' : 'rotate(0deg)'} transition='0.2s'>
+              <IoIosArrowDown />
+            </Box>
           </Box>
 
           {openIndex === index && (
